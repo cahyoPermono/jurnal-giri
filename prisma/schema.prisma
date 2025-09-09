@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole      @default(OPERATOR)
+  authAccounts  AuthAccount[]
+  sessions      Session[]
+  transactions  Transaction[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+// Model for NextAuth
+model AuthAccount {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Model for Giri Financials App
+model FinancialAccount {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  balance      Decimal       @default(0.0)
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+  TRANSFER
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  type         TransactionType
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Student {
+  id           String        @id @default(cuid())
+  nis          String        @unique @default(cuid()) // Nomor Induk Siswa
+  name         String
+  active       Boolean       @default(true)
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Transaction {
+  id          String        @id @default(cuid())
+  date        DateTime
+  description String
+  amount      Decimal
+  type        TransactionType
+
+  account     FinancialAccount @relation(fields: [accountId], references: [id])
+  accountId   String
+
+  category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+
+  student     Student? @relation(fields: [studentId], references: [id])
+  studentId   String?
+
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+
+  // For transfers
+  relatedTransaction   Transaction? @relation("TransactionTransfer", fields: [relatedTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  relatedTransactionId String?      @unique
+  sourceTransaction    Transaction? @relation("TransactionTransfer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   Json?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
