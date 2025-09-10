@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { exportToPdf } from "@/lib/pdf-export";
 
+import { toast } from "sonner";
+
 interface Transaction {
   id: string;
   date: string;
@@ -72,11 +74,13 @@ export default function GeneralJournalReportPage() {
       setTransactions(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch transactions: " + err.message);
     }
   };
 
   const handleExportPdf = () => {
     exportToPdf("general-journal-report", "general-journal-report.pdf");
+    toast.success("PDF export started!");
   };
 
   if (status === "loading") {

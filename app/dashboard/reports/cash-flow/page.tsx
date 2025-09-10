@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -13,6 +11,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { exportToPdf } from "@/lib/pdf-export";
+import { toast } from "sonner";
 
 interface CashFlowReport {
   totalCashIn: number;
@@ -65,11 +64,13 @@ export default function CashFlowReportPage() {
       setReportData(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch cash flow report: " + err.message);
     }
   };
 
   const handleExportPdf = () => {
     exportToPdf("cash-flow-report", "cash-flow-report.pdf");
+    toast.success("PDF export started!");
   };
 
   if (status === "loading") {

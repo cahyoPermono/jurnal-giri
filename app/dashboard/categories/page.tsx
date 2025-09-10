@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -9,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Category {
@@ -25,8 +24,6 @@ export default function ManageCategoriesPage() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryType, setNewCategoryType] = useState<"DEBIT" | "CREDIT" | "TRANSFER">("DEBIT");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -47,14 +44,12 @@ export default function ManageCategoriesPage() {
       const data = await res.json();
       setCategories(data);
     } catch (err: any) {
-      setError(err.message);
+      toast.error("Failed to fetch categories: " + err.message);
     }
   };
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     try {
       const res = await fetch("/api/categories", {
@@ -70,19 +65,17 @@ export default function ManageCategoriesPage() {
         throw new Error(errorData.message || "Failed to add category");
       }
 
-      setSuccess("Category added successfully!");
+      toast.success("Category added successfully!");
       setNewCategoryName("");
       setNewCategoryType("DEBIT"); // Reset to default
       fetchCategories(); // Refresh the list
     } catch (err: any) {
-      setError(err.message);
+      toast.error("Failed to add category: " + err.message);
     }
   };
 
   const handleUpdateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     if (!editingCategory) return;
 
@@ -100,17 +93,15 @@ export default function ManageCategoriesPage() {
         throw new Error(errorData.message || "Failed to update category");
       }
 
-      setSuccess("Category updated successfully!");
+      toast.success("Category updated successfully!");
       setEditingCategory(null);
       fetchCategories(); // Refresh the list
     } catch (err: any) {
-      setError(err.message);
+      toast.error("Failed to update category: " + err.message);
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
-    setError(null);
-    setSuccess(null);
 
     try {
       const res = await fetch(`/api/categories?id=${id}`, {
@@ -122,10 +113,10 @@ export default function ManageCategoriesPage() {
         throw new Error(errorData.message || "Failed to delete category");
       }
 
-      setSuccess("Category deleted successfully!");
+      toast.success("Category deleted successfully!");
       fetchCategories(); // Refresh the list
     } catch (err: any) {
-      setError(err.message);
+      toast.error("Failed to delete category: " + err.message);
     }
   };
 
@@ -140,9 +131,6 @@ export default function ManageCategoriesPage() {
         <CardDescription>Add, edit, or delete transaction categories.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {success && <p className="text-green-500 text-sm">{success}</p>}
-
         <div>
           <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
           <form onSubmit={handleAddCategory} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -236,17 +224,16 @@ export default function ManageCategoriesPage() {
                 <DialogDescription>Make changes to the category record here.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleUpdateCategory} className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="editName" className="text-right">Name</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="editName">Name</Label>
                   <Input
                     id="editName"
                     value={editingCategory.name}
                     onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                    className="col-span-3"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="editType" className="text-right">Type</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="editType">Type</Label>
                   <Select value={editingCategory.type} onValueChange={(value: "DEBIT" | "CREDIT" | "TRANSFER") => setEditingCategory({ ...editingCategory, type: value })}>
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Select a type" />

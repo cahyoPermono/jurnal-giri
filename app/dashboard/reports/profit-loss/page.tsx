@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { exportToPdf } from "@/lib/pdf-export";
+import { toast } from "sonner";
 
 interface ProfitLossReport {
   totalDebit: number;
@@ -65,11 +66,13 @@ export default function ProfitLossReportPage() {
       setReportData(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch profit/loss report: " + err.message);
     }
   };
 
   const handleExportPdf = () => {
     exportToPdf("profit-loss-report", "profit-loss-report.pdf");
+    toast.success("PDF export started!");
   };
 
   if (status === "loading") {

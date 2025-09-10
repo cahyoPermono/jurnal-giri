@@ -15,9 +15,9 @@ export async function GET(request: Request) {
       orderBy: { name: "asc" },
     });
     return NextResponse.json(students);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching students:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -30,31 +30,38 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, nis } = body;
+    const { name, nis, parentName, contactNumber, enrollmentDate, graduationDate } = body;
 
     if (!name) {
-      return new NextResponse("Missing student name", { status: 400 });
+      return NextResponse.json({ message: "Missing student name" }, { status: 400 });
     }
 
     const newStudent = await prisma.student.create({
       data: {
         name,
-        nis: nis || undefined, // Optional NIS, Prisma will generate if not provided
+        nis: nis || undefined,
+        parentName: parentName || undefined,
+        contactNumber: contactNumber || undefined,
+        enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : undefined,
+        graduationDate: graduationDate ? new Date(graduationDate) : undefined,
       },
     });
 
     await prisma.auditLog.create({
       data: {
         action: "CREATE_STUDENT",
-        details: { studentId: newStudent.id, name: newStudent.name, nis: newStudent.nis },
+        details: { studentId: newStudent.id, name: newStudent.name, nis: newStudent.nis, parentName: newStudent.parentName, contactNumber: newStudent.contactNumber, enrollmentDate: newStudent.enrollmentDate, graduationDate: newStudent.graduationDate },
         userId: session.user.id,
       },
     });
 
     return NextResponse.json(newStudent, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating student:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    if (error.code === 'P2002') {
+      return NextResponse.json({ message: "Student with this NIS already exists." }, { status: 409 });
+    }
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -67,10 +74,10 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, nis, active } = body;
+    const { id, name, nis, parentName, contactNumber, active, enrollmentDate, graduationDate } = body;
 
     if (!id || !name) {
-      return new NextResponse("Missing student ID or name", { status: 400 });
+      return NextResponse.json({ message: "Missing student ID or name" }, { status: 400 });
     }
 
     const oldStudent = await prisma.student.findUnique({ where: { id } });
@@ -80,7 +87,11 @@ export async function PUT(request: Request) {
       data: {
         name,
         nis: nis || undefined,
+        parentName: parentName || undefined,
+        contactNumber: contactNumber || undefined,
         active: active !== undefined ? active : undefined,
+        enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : undefined,
+        graduationDate: graduationDate ? new Date(graduationDate) : undefined,
       },
     });
 
@@ -93,9 +104,12 @@ export async function PUT(request: Request) {
     });
 
     return NextResponse.json(updatedStudent);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating student:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    if (error.code === 'P2002') {
+      return NextResponse.json({ message: "Student with this NIS already exists." }, { status: 409 });
+    }
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -111,7 +125,7 @@ export async function DELETE(request: Request) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return new NextResponse("Missing student ID", { status: 400 });
+      return NextResponse.json({ message: "Missing student ID" }, { status: 400 });
     }
 
     const deletedStudent = await prisma.student.delete({
@@ -127,8 +141,8 @@ export async function DELETE(request: Request) {
     });
 
     return new NextResponse(null, { status: 204 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting student:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }

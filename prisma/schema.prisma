@@ -93,13 +93,17 @@ model Category {
 }
 
 model Student {
-  id           String        @id @default(cuid())
-  nis          String        @unique @default(cuid()) // Nomor Induk Siswa
-  name         String
-  active       Boolean       @default(true)
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  nis           String        @unique @default(cuid()) // Nomor Induk Siswa
+  name          String
+  parentName    String?
+  contactNumber String?
+  active        Boolean       @default(true)
+  enrollmentDate DateTime?
+  graduationDate DateTime?
+  transactions  Transaction[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Transaction {

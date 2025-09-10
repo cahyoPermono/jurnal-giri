@@ -14,6 +14,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 
+import { toast } from "sonner";
+
 interface FinancialAccount {
   id: string;
   name: string;
@@ -33,7 +35,6 @@ export default function TransferPage() {
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]);
 
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -70,13 +71,12 @@ export default function TransferPage() {
       }
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch financial accounts: " + err.message);
     }
   };
 
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     try {
       const res = await fetch("/api/transactions/transfer", {
@@ -98,7 +98,7 @@ export default function TransferPage() {
         throw new Error(errorData.message || "Failed to perform transfer");
       }
 
-      setSuccess("Transfer successful!");
+      toast.success("Transfer successful!");
       setDate(new Date());
       setDescription("");
       setAmount("");
@@ -106,6 +106,7 @@ export default function TransferPage() {
       fetchFinancialAccounts();
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to perform transfer: " + err.message);
     }
   };
 
@@ -121,7 +122,6 @@ export default function TransferPage() {
       </CardHeader>
       <CardContent className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
-        {success && <p className="text-green-500 text-sm">{success}</p>}
 
         <form onSubmit={handleTransfer} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid gap-2">

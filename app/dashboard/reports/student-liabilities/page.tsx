@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -15,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { exportToPdf } from "@/lib/pdf-export";
+import { toast } from "sonner";
 
 interface StudentReportData {
   id: string;
@@ -75,11 +74,13 @@ export default function StudentLiabilitiesReportPage() {
       setReportData(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch student liabilities report: " + err.message);
     }
   };
 
   const handleExportPdf = () => {
     exportToPdf("student-liabilities-report", "student-liabilities-report.pdf");
+    toast.success("PDF export started!");
   };
 
   if (status === "loading") {

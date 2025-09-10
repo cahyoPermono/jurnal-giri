@@ -14,6 +14,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 
+import { toast } from "sonner";
+
 interface FinancialAccount {
   id: string;
   name: string;
@@ -48,7 +50,6 @@ export default function NewTransactionPage() {
   const [students, setStudents] = useState<Student[]>([]);
 
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -92,13 +93,12 @@ export default function NewTransactionPage() {
       if (categoriesData.length > 0) setCategoryId(categoriesData[0].id);
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch form data: " + err.message);
     }
   };
 
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     try {
       const res = await fetch("/api/transactions", {
@@ -122,14 +122,14 @@ export default function NewTransactionPage() {
         throw new Error(errorData.message || "Failed to add transaction");
       }
 
-      setSuccess("Transaction added successfully!");
+      toast.success("Transaction added successfully!");
       setDate(new Date());
       setDescription("");
       setAmount("");
       setType("DEBIT");
       // Keep accountId, categoryId, studentId as they might be frequently reused
     } catch (err: any) {
-      setError(err.message);
+      toast.error("Failed to add transaction: " + err.message);
     }
   };
 
@@ -147,7 +147,6 @@ export default function NewTransactionPage() {
       </CardHeader>
       <CardContent className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
-        {success && <p className="text-green-500 text-sm">{success}</p>}
 
         <form onSubmit={handleAddTransaction} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid gap-2">

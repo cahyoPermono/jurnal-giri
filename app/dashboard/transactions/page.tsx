@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -14,6 +12,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface Transaction {
   id: string;
@@ -97,6 +96,7 @@ export default function ViewTransactionsPage() {
       setStudents(studentsData);
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch filter data: " + err.message);
     }
   };
 
@@ -119,6 +119,7 @@ export default function ViewTransactionsPage() {
       setTransactions(data);
     } catch (err: any) {
       setError(err.message);
+      toast.error("Failed to fetch transactions: " + err.message);
     }
   };
 
