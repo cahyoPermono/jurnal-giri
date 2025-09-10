@@ -26,6 +26,11 @@ interface Category {
   id: string;
   name: string;
   type: "DEBIT" | "CREDIT" | "TRANSFER";
+  financialAccountId: string | null;
+  financialAccount?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface Student {
@@ -42,12 +47,13 @@ export default function NewTransactionPage() {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"DEBIT" | "CREDIT">("DEBIT");
   const [accountId, setAccountId] = useState<string | undefined>(undefined);
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
+  const [categoryId, setCategoryId] = useState<string | undefined>("none");
   const [studentId, setStudentId] = useState<string | undefined>(undefined);
 
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null); // New state
 
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +66,18 @@ export default function NewTransactionPage() {
 
     fetchData();
   }, [session, status, router]);
+
+  useEffect(() => {
+    // Reset accountId if selectedCategory has a financialAccountId and it's different from current accountId
+    if (selectedCategory?.financialAccountId && accountId !== selectedCategory.financialAccountId) {
+      setAccountId(selectedCategory.financialAccountId);
+    } else if (!selectedCategory?.financialAccountId && accountId === undefined) {
+      // If no specific financial account is tied to the category, and no account is selected, select the first available
+      if (financialAccounts.length > 0) {
+        setAccountId(financialAccounts[0].id);
+      }
+    }
+  }, [selectedCategory, financialAccounts, accountId]);
 
   useEffect(() => {
     // Set current date only on client side after component mounts
@@ -90,7 +108,6 @@ export default function NewTransactionPage() {
 
       // Set default values if data exists
       if (accountsData.length > 0) setAccountId(accountsData[0].id);
-      if (categoriesData.length > 0) setCategoryId(categoriesData[0].id);
     } catch (err: any) {
       setError(err.message);
       toast.error("Failed to fetch form data: " + err.message);
@@ -138,6 +155,10 @@ export default function NewTransactionPage() {
   }
 
   const filteredCategories = categories.filter(cat => cat.type === type);
+
+  const filteredFinancialAccounts = selectedCategory?.financialAccountId
+    ? financialAccounts.filter(account => account.id === selectedCategory.financialAccountId)
+    : financialAccounts;
 
   return (
     <Card className="w-full">
@@ -218,7 +239,7 @@ export default function NewTransactionPage() {
                 <SelectValue placeholder="Select account" />
               </SelectTrigger>
               <SelectContent>
-                {financialAccounts.map((account) => (
+                {filteredFinancialAccounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
                     {account.name}
                   </SelectItem>
@@ -230,11 +251,15 @@ export default function NewTransactionPage() {
           {type === "CREDIT" && (
             <div className="grid gap-2">
               <Label htmlFor="categoryId">Category (for Expense)</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Select value={categoryId} onValueChange={(value) => {
+                setCategoryId(value === "none" ? undefined : value);
+                setSelectedCategory(value === "none" ? null : categories.find(cat => cat.id === value) || null);
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
                   {filteredCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}

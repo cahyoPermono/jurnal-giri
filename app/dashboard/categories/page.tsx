@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -14,15 +16,27 @@ interface Category {
   id: string;
   name: string;
   type: "DEBIT" | "CREDIT" | "TRANSFER";
+  financialAccountId: string | null; // New field
+  financialAccount?: { // New field for relation
+    id: string;
+    name: string;
+  };
   createdAt: string;
+}
+
+interface FinancialAccount {
+  id: string;
+  name: string;
 }
 
 export default function ManageCategoriesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]); // New state
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryType, setNewCategoryType] = useState<"DEBIT" | "CREDIT" | "TRANSFER">("DEBIT");
+  const [newCategoryFinancialAccountId, setNewCategoryFinancialAccountId] = useState<string | null>(null); // New state
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   useEffect(() => {
@@ -33,7 +47,21 @@ export default function ManageCategoriesPage() {
     }
 
     fetchCategories();
+    fetchFinancialAccounts();
   }, [session, status, router]);
+
+  const fetchFinancialAccounts = async () => {
+    try {
+      const res = await fetch("/api/financial-accounts");
+      if (!res.ok) {
+        throw new Error("Failed to fetch financial accounts");
+      }
+      const data = await res.json();
+      setFinancialAccounts(data);
+    } catch (err: any) {
+      toast.error("Failed to fetch financial accounts: " + err.message);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -57,7 +85,7 @@ export default function ManageCategoriesPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: newCategoryName, type: newCategoryType }),
+        body: JSON.stringify({ name: newCategoryName, type: newCategoryType, financialAccountId: newCategoryFinancialAccountId }),
       });
 
       if (!res.ok) {
@@ -85,7 +113,7 @@ export default function ManageCategoriesPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id: editingCategory.id, name: editingCategory.name, type: editingCategory.type }),
+        body: JSON.stringify({ id: editingCategory.id, name: editingCategory.name, type: editingCategory.type, financialAccountId: editingCategory.financialAccountId }),
       });
 
       if (!res.ok) {
@@ -133,7 +161,7 @@ export default function ManageCategoriesPage() {
       <CardContent className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
-          <form onSubmit={handleAddCategory} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <form onSubmit={handleAddCategory} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="grid gap-2">
               <Label htmlFor="newCategoryName">Name</Label>
               <Input
@@ -157,6 +185,24 @@ export default function ManageCategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="newCategoryFinancialAccount">Financial Account (Optional)</Label>
+              <Select
+                  value={newCategoryFinancialAccountId || ""}
+                  onValueChange={(value) => setNewCategoryFinancialAccountId(value || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {financialAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+            </div>
             <Button type="submit" className="col-span-full md:col-span-1">
               Add Category
             </Button>
@@ -174,6 +220,7 @@ export default function ManageCategoriesPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Financial Account</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -183,6 +230,7 @@ export default function ManageCategoriesPage() {
                     <TableRow key={category.id}>
                       <TableCell className="font-medium">{category.name}</TableCell>
                       <TableCell>{category.type}</TableCell>
+                      <TableCell>{category.financialAccount?.name || "N/A"}</TableCell>
                       <TableCell>{new Date(category.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" className="mr-2" onClick={() => setEditingCategory(category)}>
@@ -242,6 +290,24 @@ export default function ManageCategoriesPage() {
                       <SelectItem value="DEBIT">DEBIT (Income)</SelectItem>
                       <SelectItem value="CREDIT">CREDIT (Expense)</SelectItem>
                       {/* <SelectItem value="TRANSFER">TRANSFER</SelectItem> */}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="editFinancialAccount">Financial Account (Optional)</Label>
+                  <Select
+                    value={editingCategory.financialAccountId || ""}
+                    onValueChange={(value) => setEditingCategory({ ...editingCategory, financialAccountId: value || null })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {financialAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

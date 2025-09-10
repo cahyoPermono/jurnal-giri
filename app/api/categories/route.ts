@@ -14,6 +14,9 @@ export async function GET(request: Request) {
   try {
     const categories = await prisma.category.findMany({
       orderBy: { name: "asc" },
+      include: {
+        financialAccount: true, // Include the related financial account
+      },
     });
     return NextResponse.json(categories);
   } catch (error) {
@@ -31,7 +34,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, type } = body;
+    const { name, type, financialAccountId } = body;
 
     if (!name || !type) {
       return new NextResponse("Missing category name or type", { status: 400 });
@@ -45,6 +48,7 @@ export async function POST(request: Request) {
       data: {
         name,
         type,
+        financialAccountId: financialAccountId || null,
       },
     });
 
@@ -72,7 +76,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, type } = body;
+    const { id, name, type, financialAccountId } = body;
 
     if (!id || !name || !type) {
       return new NextResponse("Missing category ID, name, or type", { status: 400 });
@@ -89,6 +93,7 @@ export async function PUT(request: Request) {
       data: {
         name,
         type,
+        financialAccountId: financialAccountId || null,
       },
     });
 
