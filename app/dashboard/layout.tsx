@@ -34,7 +34,7 @@ export default function DashboardLayout({
     <div className="flex min-h-screen bg-gray-50">
       <aside className="w-64 bg-white shadow-md p-4 flex flex-col justify-between">
         <div>
-          <h2 className="text-2xl font-bold mb-6 text-center">Giri Financials</h2>
+          <img src="/logonobg.png" alt="Giri Financials Logo" className="w-32 h-auto mx-auto mb-6" />
           <nav className="space-y-2">
             <Button asChild variant="ghost" className="w-full justify-start">
               <Link href="/dashboard">Dashboard</Link>
