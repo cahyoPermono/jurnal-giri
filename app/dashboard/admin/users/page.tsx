@@ -197,8 +197,6 @@ export default function ManageUsersPage() {
   );
 }
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -289,8 +287,6 @@ export default function ManageUsersPage() {
         <CardDescription>Add new operators or view existing ones.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {success && <p className="text-green-500 text-sm">{success}</p>}
 
         <div>
           <h3 className="text-lg font-semibold mb-4">Add New Operator</h3>
