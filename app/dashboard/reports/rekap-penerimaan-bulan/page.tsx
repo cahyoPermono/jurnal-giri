@@ -1,0 +1,173 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { exportToPdf } from "@/lib/pdf-export";
+import { toast } from "sonner";
+
+interface ReportRow {
+  no: number;
+  tanggal: string;
+  uraian: string;
+  debet: number;
+  saldo: number;
+}
+
+interface RekapPenerimaanBulanReport {
+  month: number;
+  year: number;
+  report: ReportRow[];
+}
+
+const monthNames = [
+  "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+export default function RekapPenerimaanBulanReportPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const [reportData, setReportData] = useState<RekapPenerimaanBulanReport | null>(null);
+  const [month, setMonth] = useState<string>("");
+  const [year, setYear] = useState<string>("");
+
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session) {
+      router.push("/login");
+    }
+  }, [session, status, router]);
+
+  const fetchReportData = async () => {
+    if (!month || !year) {
+      toast.error("Bulan dan tahun harus diisi");
+      return;
+    }
+
+    setError(null);
+    const params = new URLSearchParams();
+    params.append("month", month);
+    params.append("year", year);
+
+    try {
+      const res = await fetch(`/api/reports/rekap-penerimaan-bulan?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch rekap penerimaan bulan report");
+      }
+      const data = await res.json();
+      setReportData(data);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error("Failed to fetch rekap penerimaan bulan report: " + err.message);
+    }
+  };
+
+  const handleExportPdf = () => {
+    exportToPdf("rekap-penerimaan-bulan-report", "rekap-penerimaan-bulan-report.pdf");
+    toast.success("PDF export started!");
+  };
+
+  if (status === "loading") {
+    return <p>Memuat...</p>;
+  }
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Rekap Penerimaan per Bulan</CardTitle>
+        <CardDescription>Laporan rekapitulasi penerimaan (debet) berdasarkan bulan dan tahun.</CardDescription>
+      </CardHeader>
+      <CardContent id="rekap-penerimaan-bulan-report" className="space-y-6">
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid gap-2">
+            <Label htmlFor="month">Bulan</Label>
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthNames.slice(1).map((name, index) => (
+                  <SelectItem key={index + 1} value={(index + 1).toString()}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="year">Tahun</Label>
+            <Input
+              id="year"
+              placeholder="Contoh: 2018"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button onClick={fetchReportData} className="mb-4">Tampilkan Laporan</Button>
+
+        {reportData && (
+          <>
+            <div className="mb-4">
+              <p className="text-lg font-medium">Bulan: {monthNames[reportData.month]}</p>
+              <p className="text-lg font-medium">Tahun: {reportData.year}</p>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No.</TableHead>
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Uraian</TableHead>
+                  <TableHead>Debet</TableHead>
+                  <TableHead>Saldo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reportData.report.map((row, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{row.no}</TableCell>
+                    <TableCell>{row.tanggal}</TableCell>
+                    <TableCell>{row.uraian}</TableCell>
+                    <TableCell>{formatCurrency(row.debet)}</TableCell>
+                    <TableCell>{formatCurrency(row.saldo)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <Button onClick={handleExportPdf} className="mt-4">Ekspor ke PDF</Button>
+          </>
+        )}
+
+        {!reportData && !error && (
+          <p className="text-gray-500 text-center">Pilih bulan dan tahun untuk melihat laporan.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

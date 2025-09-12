@@ -10,6 +10,7 @@ export async function exportToPdf(elementId: string, filename: string) {
   try {
     // Check if this is the rekap-semester report
     const isRekapSemester = elementId === 'rekap-semester-report';
+    const isRekapPenerimaanBulan = elementId === 'rekap-penerimaan-bulan-report';
 
     // Extract table data directly from the DOM
     const table = input.querySelector('table');
@@ -57,6 +58,40 @@ export async function exportToPdf(elementId: string, filename: string) {
       yPosition += 8;
       pdf.text(`TAHUN AJARAN ${academicYear}`, pageWidth / 2, yPosition, { align: 'center' });
       yPosition += 15;
+    } else if (isRekapPenerimaanBulan) {
+      // Custom header for rekap penerimaan bulan
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('REKAP PENERIMAAN KB SUNAN GIRI', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
+
+      // Extract month and year from the page
+      const monthElements = input.querySelectorAll('p');
+      let monthName = '';
+      let year = '';
+      monthElements.forEach(p => {
+        const text = p.textContent || '';
+        const monthMatch = text.match(/Bulan: ([^\n]+)/);
+        const yearMatch = text.match(/Tahun: (\d{4})/);
+        if (monthMatch) monthName = monthMatch[1].trim();
+        if (yearMatch) year = yearMatch[1];
+      });
+
+      pdf.setFontSize(12);
+      pdf.text(`BULAN ${monthName} ${year}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+    } else if (elementId === 'transactions-table') {
+      // Custom header for transactions table
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Transaction Report', margin, yPosition);
+      yPosition += 15;
+
+      // Add current date
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, margin, yPosition);
+      yPosition += 10;
     } else {
       // Default header for other reports
       const titleElement = input.querySelector('h2') || input.querySelector('h1');
@@ -100,11 +135,26 @@ export async function exportToPdf(elementId: string, filename: string) {
       rows.push(rowData);
     });
 
-    // Calculate column widths
-    const columnWidth = (pageWidth - 2 * margin) / headers.length;
+    // Calculate column widths - custom widths for rekap penerimaan bulan
+    let columnWidths: number[] = [];
+    if (isRekapPenerimaanBulan) {
+      // Custom widths: No (narrow), Tanggal, Uraian (wide), Debet, Saldo
+      const totalWidth = pageWidth - 2 * margin;
+      columnWidths = [
+        totalWidth * 0.08, // No - 8%
+        totalWidth * 0.18, // Tanggal - 18%
+        totalWidth * 0.40, // Uraian - 40%
+        totalWidth * 0.17, // Debet - 17%
+        totalWidth * 0.17  // Saldo - 17%
+      ];
+    } else {
+      // Equal widths for other reports
+      const columnWidth = (pageWidth - 2 * margin) / headers.length;
+      columnWidths = new Array(headers.length).fill(columnWidth);
+    }
 
-    if (isRekapSemester) {
-      // Draw table with full borders for rekap semester
+    if (isRekapSemester || isRekapPenerimaanBulan) {
+      // Draw table with full borders for rekap reports
       const tableStartY = yPosition;
       const rowHeight = 10;
       const tableWidth = pageWidth - 2 * margin;
@@ -118,7 +168,7 @@ export async function exportToPdf(elementId: string, filename: string) {
       pdf.rect(margin, yPosition - 5, tableWidth, rowHeight, 'F');
 
       headers.forEach((header, index) => {
-        const x = margin + (index * columnWidth);
+        const x = margin + columnWidths.slice(0, index).reduce((sum, width) => sum + width, 0);
         pdf.text(header, x + 2, yPosition + 3);
 
         // Draw vertical lines
@@ -132,58 +182,57 @@ export async function exportToPdf(elementId: string, filename: string) {
       // Draw table rows with borders
       pdf.setFont('helvetica', 'normal');
       rows.forEach((row) => {
+        let currentY = yPosition;
+        let maxRowHeight = rowHeight;
+
         row.forEach((cell, cellIndex) => {
-          const x = margin + (cellIndex * columnWidth);
-          pdf.text(cell, x + 2, yPosition + 3);
+          const x = margin + columnWidths.slice(0, cellIndex).reduce((sum, width) => sum + width, 0);
+          const cellWidth = columnWidths[cellIndex] - 4; // Account for padding
+
+          if (cellIndex === 2) { // Uraian column (index 2: No, Tanggal, Uraian, Debet, Saldo)
+            // Handle text wrapping for Uraian column
+            const lines = pdf.splitTextToSize(cell, cellWidth);
+            const cellHeight = lines.length * 5; // Approximate line height
+            if (cellHeight > maxRowHeight) {
+              maxRowHeight = cellHeight + 10; // Add some padding
+            }
+
+            // Draw wrapped text
+            pdf.text(lines, x + 2, currentY + 3);
+          } else {
+            // Regular text for other columns
+            pdf.text(cell, x + 2, currentY + 3);
+          }
 
           // Draw vertical lines for each cell
-          pdf.line(x, yPosition - 5, x, yPosition - 5 + rowHeight);
+          const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
+          pdf.line(nextX, yPosition - 5, nextX, yPosition - 5 + maxRowHeight);
         });
 
-        // Draw horizontal line and rectangle for row
-        pdf.rect(margin, yPosition - 5, tableWidth, rowHeight);
-        yPosition += rowHeight;
+        // Draw horizontal line and rectangle for row with adjusted height
+        pdf.rect(margin, yPosition - 5, tableWidth, maxRowHeight);
+        yPosition += maxRowHeight;
       });
 
       // Add signature section
-      yPosition += 5;
+      yPosition += 10;
 
-      // Left signature
-      pdf.setFontSize(10);
-      pdf.text('Mengetahui,', margin, yPosition);
-
-      // Right signature
+      // Date above signatures
       const currentDate = new Date();
-      const formattedDate = currentDate.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      });
+      const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
 
+      pdf.setFontSize(10);
       pdf.text(`Jember, ${formattedDate}`, pageWidth - margin - 60, yPosition);
 
       // Align titles at the same level
       const titleY = yPosition + 8;
-      pdf.text('Pengelola KB Sunan Giri', margin, titleY);
+      pdf.text('Pengelola KB', margin, titleY);
       pdf.text('Bendahara', pageWidth - margin - 60, titleY);
 
       // Place both signatures at the same level
       const signatureY = titleY + 20;
       pdf.text('(Zulfa Mazidah, S.Pd.I)', margin, signatureY);
-      pdf.text('(Wiwin Fauziyah)', pageWidth - margin - 60, signatureY);
-
-      // Add approval section
-      const approvalY = signatureY + 25;
-      pdf.text('Menyetujui,', pageWidth / 2 - 20, approvalY); // Move 20mm to the left
-
-      // Approval signatures - match spacing with first section
-      const approvalTitleY = approvalY + 8;
-      const approvalSignatureY = approvalTitleY + 20;
-      pdf.text('Ketua Yayasan', margin, approvalTitleY);
-      pdf.text('Komite', pageWidth - margin - 60, approvalTitleY);
-
-      pdf.text('(Hj. Aminah As\'adi, S.Pd)', margin, approvalSignatureY);
-      pdf.text('(H. Sutrisno Abdurrahman)', pageWidth - margin - 60, approvalSignatureY);
+      pdf.text('(Wiwin Fauziyah, S.sos)', pageWidth - margin - 60, signatureY);
 
     } else {
       // Default table rendering for other reports
@@ -191,7 +240,7 @@ export async function exportToPdf(elementId: string, filename: string) {
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
       headers.forEach((header, index) => {
-        const x = margin + (index * columnWidth);
+        const x = margin + columnWidths.slice(0, index).reduce((sum, width) => sum + width, 0);
         pdf.text(header, x, yPosition);
       });
       yPosition += 8;
@@ -211,7 +260,7 @@ export async function exportToPdf(elementId: string, filename: string) {
           // Re-add headers on new page
           pdf.setFont('helvetica', 'bold');
           headers.forEach((header, index) => {
-            const x = margin + (index * columnWidth);
+            const x = margin + columnWidths.slice(0, index).reduce((sum, width) => sum + width, 0);
             pdf.text(header, x, yPosition);
           });
           yPosition += 8;
@@ -221,9 +270,9 @@ export async function exportToPdf(elementId: string, filename: string) {
         }
 
         row.forEach((cell, cellIndex) => {
-          const x = margin + (cellIndex * columnWidth);
+          const x = margin + columnWidths.slice(0, cellIndex).reduce((sum, width) => sum + width, 0);
           // Truncate long text to fit in column
-          const maxLength = Math.floor(columnWidth / 2); // Approximate characters per mm
+          const maxLength = Math.floor(columnWidths[cellIndex] / 2); // Approximate characters per mm
           const truncatedText = cell.length > maxLength ? cell.substring(0, maxLength - 3) + '...' : cell;
           pdf.text(truncatedText, x, yPosition);
         });

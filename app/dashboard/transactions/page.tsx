@@ -13,8 +13,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, DownloadIcon } from "lucide-react";
 import { toast } from "sonner";
+import { exportToPdf } from "@/lib/pdf-export";
 
 interface Transaction {
   id: string;
@@ -264,7 +265,14 @@ export default function ViewTransactionsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border overflow-x-auto">
+        <div className="flex justify-end mb-4">
+          <Button onClick={() => exportToPdf('transactions-table', 'transactions.pdf')} variant="outline">
+            <DownloadIcon className="mr-2 h-4 w-4" />
+            Export to PDF
+          </Button>
+        </div>
+
+        <div id="transactions-table" className="rounded-md border overflow-x-auto">
           <Table className="min-w-full">
             <TableHeader>
               <TableRow>
