@@ -62,9 +62,10 @@ export default function ManageStudentsPage() {
   const [newStudentContactNumber, setNewStudentContactNumber] = useState("");
   const [newStudentEnrollmentDate, setNewStudentEnrollmentDate] = useState<
     Date | undefined
-  >(undefined);
+  >(new Date());
 
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -85,7 +86,7 @@ export default function ManageStudentsPage() {
       const data = await res.json();
       setStudents(data);
     } catch (err: any) {
-      toast.error("Failed to fetch students: " + err.message);
+      toast.error("Gagal mengambil data siswa: " + err.message);
     }
   };
 
@@ -93,6 +94,11 @@ export default function ManageStudentsPage() {
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!newStudentEnrollmentDate) {
+      toast.error("Tanggal pendaftaran wajib diisi");
+      return;
+    }
 
     try {
       const res = await fetch("/api/students", {
@@ -113,14 +119,14 @@ export default function ManageStudentsPage() {
         throw new Error(errorData.message || "Failed to add student");
       }
 
-      toast.success("Student added successfully!");
+      toast.success("Siswa berhasil ditambahkan!");
       setNewStudentName("");
       setNewStudentParentName("");
       setNewStudentContactNumber("");
-      setNewStudentEnrollmentDate(undefined);
+      setNewStudentEnrollmentDate(new Date());
       fetchStudents(); // Refresh the list
     } catch (err: any) {
-      toast.error("Failed to add student: " + err.message);
+      toast.error("Gagal menambahkan siswa: " + err.message);
     }
   };
 
@@ -156,10 +162,11 @@ export default function ManageStudentsPage() {
         throw new Error(errorData.message || "Failed to update student");
       }
 
+      toast.success("Siswa berhasil diperbarui!");
       setEditingStudent(null);
       fetchStudents(); // Refresh the list
     } catch (err: any) {
-      toast.error("Failed to update student: " + err.message);
+      toast.error("Gagal memperbarui siswa: " + err.message);
     }
   };
 
@@ -174,10 +181,10 @@ export default function ManageStudentsPage() {
         throw new Error(errorData.message || "Failed to delete student");
       }
 
-      toast.success("Student deleted successfully!");
+      toast.success("Siswa berhasil dihapus!");
       fetchStudents(); // Refresh the list
     } catch (err: any) {
-      toast.error("Failed to delete student: " + err.message);
+      toast.error("Gagal menghapus siswa: " + err.message);
     }
   };
 
@@ -216,6 +223,7 @@ export default function ManageStudentsPage() {
                 type="text"
                 value={newStudentParentName}
                 onChange={(e) => setNewStudentParentName(e.target.value)}
+                required
               />
             </div>
             <div className="grid gap-2">
@@ -225,6 +233,7 @@ export default function ManageStudentsPage() {
                 type="text"
                 value={newStudentContactNumber}
                 onChange={(e) => setNewStudentContactNumber(e.target.value)}
+                required
               />
             </div>
             <div className="grid gap-2">
@@ -264,23 +273,23 @@ export default function ManageStudentsPage() {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Existing Students</h3>
+          <h3 className="text-lg font-semibold mb-4">Siswa Yang Ada</h3>
           {students.length === 0 ? (
-            <p className="text-gray-500">No students found.</p>
+            <p className="text-gray-500">Tidak ada siswa ditemukan.</p>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
+                    <TableHead>Nama</TableHead>
                     <TableHead>NIS</TableHead>
-                    <TableHead>Parent Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead>Enrollment Date</TableHead>
-                    <TableHead>Graduation Date</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Nama Orang Tua</TableHead>
+                    <TableHead>Kontak</TableHead>
+                    <TableHead>Aktif</TableHead>
+                    <TableHead>Tanggal Pendaftaran</TableHead>
+                    <TableHead>Tanggal Kelulusan</TableHead>
+                    <TableHead>Dibuat Pada</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -292,7 +301,7 @@ export default function ManageStudentsPage() {
                       <TableCell>{student.nis}</TableCell>
                       <TableCell>{student.parentName || "-"}</TableCell>
                       <TableCell>{student.contactNumber || "-"}</TableCell>
-                      <TableCell>{student.active ? "Yes" : "No"}</TableCell>
+                      <TableCell>{student.active ? "Ya" : "Tidak"}</TableCell>
                       <TableCell>
                         {student.enrollmentDate
                           ? new Date(
@@ -319,40 +328,13 @@ export default function ManageStudentsPage() {
                         >
                           Edit
                         </Button>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              Delete
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>
-                                Are you absolutely sure?
-                              </DialogTitle>
-                              <DialogDescription>
-                                This action cannot be undone. This will
-                                permanently delete the student record.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                              <Button
-                                variant="outline"
-                                onClick={() => {
-                                  /* Close dialog */
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={() => handleDeleteStudent(student.id)}
-                              >
-                                Delete
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setDeletingStudentId(student.id)}
+                        >
+                          Hapus
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -371,14 +353,14 @@ export default function ManageStudentsPage() {
           >
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Edit Student</DialogTitle>
+                <DialogTitle>Edit Siswa</DialogTitle>
                 <DialogDescription>
-                  Make changes to the student record here.
+                  Buat perubahan pada data siswa di sini.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleUpdateStudent} className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="editName">Name</Label>
+                  <Label htmlFor="editName">Nama</Label>
                   <Input
                     id="editName"
                     value={editingStudent.name}
@@ -404,7 +386,7 @@ export default function ManageStudentsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editParentName">Parent Name</Label>
+                  <Label htmlFor="editParentName">Nama Orang Tua</Label>
                   <Input
                     id="editParentName"
                     value={editingStudent.parentName || ""}
@@ -417,7 +399,7 @@ export default function ManageStudentsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editContactNumber">Contact Number</Label>
+                  <Label htmlFor="editContactNumber">Nomor Kontak</Label>
                   <Input
                     id="editContactNumber"
                     value={editingStudent.contactNumber || ""}
@@ -430,7 +412,7 @@ export default function ManageStudentsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editEnrollmentDate">Enrollment Date</Label>
+                  <Label htmlFor="editEnrollmentDate">Tanggal Pendaftaran</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -445,7 +427,7 @@ export default function ManageStudentsPage() {
                         {editingStudent.enrollmentDate ? (
                           format(new Date(editingStudent.enrollmentDate), "PPP")
                         ) : (
-                          <span>Pick a date</span>
+                          <span>Pilih tanggal</span>
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -469,7 +451,7 @@ export default function ManageStudentsPage() {
                   </Popover>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editGraduationDate">Graduation Date</Label>
+                  <Label htmlFor="editGraduationDate">Tanggal Kelulusan</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -484,7 +466,7 @@ export default function ManageStudentsPage() {
                         {editingStudent.graduationDate ? (
                           format(new Date(editingStudent.graduationDate), "PPP")
                         ) : (
-                          <span>Pick a date</span>
+                          <span>Pilih tanggal</span>
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -508,7 +490,7 @@ export default function ManageStudentsPage() {
                   </Popover>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editActive">Active</Label>
+                  <Label htmlFor="editActive">Aktif</Label>
                   <input
                     id="editActive"
                     type="checkbox"
@@ -527,11 +509,45 @@ export default function ManageStudentsPage() {
                     variant="outline"
                     onClick={() => setEditingStudent(null)}
                   >
-                    Cancel
+                    Batal
                   </Button>
-                  <Button type="submit">Save changes</Button>
+                  <Button type="submit">Simpan perubahan</Button>
                 </DialogFooter>
               </form>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {deletingStudentId && (
+          <Dialog
+            open={!!deletingStudentId}
+            onOpenChange={() => setDeletingStudentId(null)}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Apakah Anda yakin?</DialogTitle>
+                <DialogDescription>
+                  Tindakan ini tidak dapat dibatalkan. Ini akan
+                  menghapus data siswa secara permanen.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeletingStudentId(null)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    handleDeleteStudent(deletingStudentId);
+                    setDeletingStudentId(null);
+                  }}
+                >
+                  Hapus
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         )}

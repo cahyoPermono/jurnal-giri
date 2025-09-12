@@ -79,6 +79,20 @@ export default function ManageCategoriesPage() {
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation for required fields
+    if (!newCategoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+    if (!newCategoryType) {
+      toast.error("Category type is required");
+      return;
+    }
+    if (!newCategoryFinancialAccountId) {
+      toast.error("Financial account is required");
+      return;
+    }
+
     try {
       const res = await fetch("/api/categories", {
         method: "POST",
@@ -96,6 +110,7 @@ export default function ManageCategoriesPage() {
       toast.success("Category added successfully!");
       setNewCategoryName("");
       setNewCategoryType("DEBIT"); // Reset to default
+      setNewCategoryFinancialAccountId(null); // Reset financial account
       fetchCategories(); // Refresh the list
     } catch (err: any) {
       toast.error("Failed to add category: " + err.message);
@@ -186,7 +201,7 @@ export default function ManageCategoriesPage() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newCategoryFinancialAccount">Financial Account (Optional)</Label>
+              <Label htmlFor="newCategoryFinancialAccount">Financial Account</Label>
               <Select
                   value={newCategoryFinancialAccountId || ""}
                   onValueChange={(value) => setNewCategoryFinancialAccountId(value || null)}
