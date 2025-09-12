@@ -117,6 +117,41 @@ export default function DashboardContent() {
 
   return (
     <div className="space-y-6">
+      {unpaidStudents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>⚠️ Siswa Belum Bayar SPP Bulan Ini</CardTitle>
+            <CardDescription>
+              {unpaidStudents.length} siswa aktif yang perlu ditagih SPP bulan ini
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {unpaidStudents.map((student) => (
+                <div key={student.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div>
+                    <p className="font-medium text-gray-900">{student.name}</p>
+                    <p className="text-sm text-gray-600">
+                      NIS: {student.nis} | Orang Tua: {student.parentName || "Tidak ada"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">
+                      {student.contactNumber || "No contact"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t">
+              <p className="text-sm text-gray-600">
+                💡 Klik menu "Kelola Siswa" untuk melihat detail lengkap dan mengelola data siswa
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
@@ -159,41 +194,6 @@ export default function DashboardContent() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-
-      {unpaidStudents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>⚠️ Siswa Belum Bayar SPP Bulan Ini</CardTitle>
-            <CardDescription>
-              {unpaidStudents.length} siswa aktif yang perlu ditagih SPP bulan ini
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {unpaidStudents.map((student) => (
-                <div key={student.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div>
-                    <p className="font-medium text-gray-900">{student.name}</p>
-                    <p className="text-sm text-gray-600">
-                      NIS: {student.nis} | Orang Tua: {student.parentName || "Tidak ada"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">
-                      {student.contactNumber || "No contact"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-3 border-t">
-              <p className="text-sm text-gray-600">
-                💡 Klik menu "Kelola Siswa" untuk melihat detail lengkap dan mengelola data siswa
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {summary.notifications.length > 0 && (
         <Card>
