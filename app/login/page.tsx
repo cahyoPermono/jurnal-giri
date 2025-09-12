@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+
 
 
 export default function LoginPage() {
@@ -60,33 +62,19 @@ export default function LoginPage() {
         <Card className="w-[400px] shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg animate-in slide-in-from-bottom-4 duration-700">
           <CardHeader className="space-y-4 pb-2">
             <div className="flex justify-center">
-              <svg
-                width="80"
-                height="80"
-                viewBox="0 0 80 80"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+              <Image
+                src="/logonobg.png"
+                alt="Jurnal Giri Logo"
+                width={100}
+                height={100}
                 className="animate-in zoom-in-50 duration-1000"
-              >
-                <rect width="80" height="80" rx="16" fill="url(#gradient)"/>
-                <path d="M20 25h40v30H20z" fill="white" opacity="0.9"/>
-                <path d="M25 30h30v5H25z" fill="#3B82F6"/>
-                <path d="M25 38h30v3H25z" fill="#6366F1"/>
-                <path d="M25 43h20v3H25z" fill="#8B5CF6"/>
-                <text x="40" y="65" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="bold">JG</text>
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#3B82F6" stopOpacity="1" />
-                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity="1" />
-                  </linearGradient>
-                </defs>
-              </svg>
+              />
             </div>
             <CardTitle className="text-3xl text-center font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Selamat Datang!
+              Jurnal Giri
             </CardTitle>
             <CardDescription className="text-center text-gray-600 dark:text-gray-300">
-              Bergabunglah dengan kelompok bermain kami dan mulai petualangan jurnal Anda.
+              Aplikasi Keuangan Kelompok Bermain
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
@@ -137,13 +125,13 @@ export default function LoginPage() {
                     <span>Masuk...</span>
                   </div>
                 ) : (
-                  "Masuk ke Petualangan"
+                  "Masuk"
                 )}
               </Button>
             </form>
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Bergabunglah dengan komunitas kami untuk pengalaman yang lebih seru!
+                © 2024 Jurnal Giri. All rights reserved.
               </p>
             </div>
           </CardContent>
