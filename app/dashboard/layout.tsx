@@ -158,22 +158,10 @@ export default function DashboardLayout({
               <ChevronDown className={`h-5 w-5 transition-transform ${isReportsOpen ? "rotate-180" : "rotate-0"}`} />
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-2">
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/general-journal")} onClick={handleNavClick}>
-                <Link href="/dashboard/reports/general-journal">
-                  <FileText className="h-4 w-4" />
-                  Jurnal Umum
-                </Link>
-              </Button>
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/profit-loss")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/profit-loss">
                   <TrendingUp className="h-4 w-4" />
                   Laba Rugi
-                </Link>
-              </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/cash-flow")} onClick={handleNavClick}>
-                <Link href="/dashboard/reports/cash-flow">
-                  <DollarSign className="h-4 w-4" />
-                  Arus Kas
                 </Link>
               </Button>
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/rekap-semester")} onClick={handleNavClick}>
