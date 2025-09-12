@@ -56,6 +56,7 @@ export default function NewTransactionPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null); // New state
 
   const [error, setError] = useState<string | null>(null);
+  const [isStudentRequired, setIsStudentRequired] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -85,6 +86,20 @@ export default function NewTransactionPage() {
       setDate(new Date());
     }
   }, [date]);
+
+  useEffect(() => {
+    // Check if student field should be required based on selected financial account and transaction type
+    if (accountId && type === "DEBIT") {
+      const selectedAccount = financialAccounts.find(account => account.id === accountId);
+      if (selectedAccount && (selectedAccount.name === "SPP" || selectedAccount.name === "Pendaftaran")) {
+        setIsStudentRequired(true);
+      } else {
+        setIsStudentRequired(false);
+      }
+    } else {
+      setIsStudentRequired(false);
+    }
+  }, [accountId, financialAccounts, type]);
 
   const fetchData = async () => {
     try {
@@ -116,6 +131,12 @@ export default function NewTransactionPage() {
 
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required student field
+    if (isStudentRequired && (!studentId || studentId === "none")) {
+      toast.error("Student is required when Financial Account is SPP or Pendaftaran");
+      return;
+    }
 
     try {
       const res = await fetch("/api/transactions", {
@@ -233,22 +254,6 @@ export default function NewTransactionPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="accountId">Financial Account</Label>
-            <Select value={accountId} onValueChange={setAccountId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select account" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredFinancialAccounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
             <Label htmlFor="categoryId">Category</Label>
             <Select value={categoryId} onValueChange={(value) => {
               setCategoryId(value === "none" ? undefined : value);
@@ -269,8 +274,26 @@ export default function NewTransactionPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="studentId">Student (Optional)</Label>
-            <Select value={studentId} onValueChange={setStudentId}>
+            <Label htmlFor="accountId">Financial Account</Label>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredFinancialAccounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="studentId">
+              Student {isStudentRequired ? "" : "(Optional)"}
+            </Label>
+            <Select value={studentId} onValueChange={setStudentId} required={isStudentRequired}>
               <SelectTrigger>
                 <SelectValue placeholder="Select student" />
               </SelectTrigger>
