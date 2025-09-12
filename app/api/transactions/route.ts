@@ -1,11 +1,11 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { TransactionType } from "@prisma/client";
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "OPERATOR")) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -30,6 +30,22 @@ export async function POST(request: Request) {
 
     // Start a Prisma transaction to ensure atomicity
     const transactionRecord = await prisma.$transaction(async (tx) => {
+      // Fetch related data for denormalization
+      const [account, category, student, user] = await Promise.all([
+        tx.financialAccount.findUnique({ where: { id: accountId } }),
+        categoryId ? tx.category.findUnique({ where: { id: categoryId } }) : null,
+        studentId ? tx.student.findUnique({ where: { id: studentId } }) : null,
+        tx.user.findUnique({ where: { id: session.user.id } })
+      ]);
+
+      if (!account) {
+        throw new Error("Financial account not found");
+      }
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       const newTransaction = await tx.transaction.create({
         data: {
           date: new Date(date),
@@ -40,6 +56,11 @@ export async function POST(request: Request) {
           categoryId: categoryId || null,
           studentId: studentId || null,
           userId: session.user.id, // Associate transaction with the logged-in user
+          // Denormalized fields for data integrity
+          accountName: account.name,
+          categoryName: category?.name || null,
+          studentName: student?.name || null,
+          userName: user.name || user.email || "Unknown User",
         },
       });
 
@@ -91,7 +112,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 });

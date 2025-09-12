@@ -22,10 +22,15 @@ interface Transaction {
   description: string;
   amount: number;
   type: "DEBIT" | "CREDIT" | "TRANSFER";
-  account: { name: string };
+  account?: { name: string };
   category?: { name: string };
   student?: { name: string };
-  user: { name: string };
+  user?: { name: string };
+  // Denormalized fields for data integrity
+  accountName?: string;
+  categoryName?: string;
+  studentName?: string;
+  userName?: string;
 }
 
 interface FinancialAccount {
@@ -285,12 +290,12 @@ export default function ViewTransactionsPage() {
                   <TableRow key={transaction.id}>
                     <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                     <TableCell>{transaction.description}</TableCell>
-                    <TableCell>{parseFloat(transaction.amount).toFixed(2)}</TableCell>
+                    <TableCell>{Number(transaction.amount).toFixed(2)}</TableCell>
                     <TableCell>{transaction.type}</TableCell>
-                    <TableCell>{transaction.account.name}</TableCell>
-                    <TableCell>{transaction.category?.name || "-"}</TableCell>
-                    <TableCell>{transaction.student?.name || "-"}</TableCell>
-                    <TableCell>{transaction.user.name}</TableCell>
+                    <TableCell>{transaction.accountName || transaction.account?.name || "-"}</TableCell>
+                    <TableCell>{transaction.categoryName || transaction.category?.name || "-"}</TableCell>
+                    <TableCell>{transaction.studentName || transaction.student?.name || "-"}</TableCell>
+                    <TableCell>{transaction.userName || transaction.user?.name || "-"}</TableCell>
                   </TableRow>
                 ))
               )}

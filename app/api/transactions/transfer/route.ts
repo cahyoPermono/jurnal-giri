@@ -1,11 +1,11 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { TransactionType } from "@prisma/client";
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "OPERATOR")) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -30,6 +30,12 @@ export async function POST(request: Request) {
 
     // Start a Prisma transaction to ensure atomicity for both debit and credit parts of the transfer
     const transferRecords = await prisma.$transaction(async (tx) => {
+      // Fetch user for denormalization
+      const user = await tx.user.findUnique({ where: { id: session.user.id } });
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       // 1. Debit from source account
       const sourceAccount = await tx.financialAccount.findUnique({
         where: { id: sourceAccountId },
@@ -57,6 +63,9 @@ export async function POST(request: Request) {
           type: TransactionType.DEBIT,
           accountId: sourceAccountId,
           userId: session.user.id,
+          // Denormalized fields for data integrity
+          accountName: sourceAccount.name,
+          userName: user.name || user.email || "Unknown User",
         },
       });
 
@@ -84,6 +93,9 @@ export async function POST(request: Request) {
           type: TransactionType.CREDIT,
           accountId: destinationAccountId,
           userId: session.user.id,
+          // Denormalized fields for data integrity
+          accountName: destinationAccount.name,
+          userName: user.name || user.email || "Unknown User",
         },
       });
 

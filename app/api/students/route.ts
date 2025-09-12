@@ -1,10 +1,11 @@
 import { getServerSession } from "next-auth/next";
+import { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as Session | null;
 
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as Session | null;
 
   if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "OPERATOR")) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as Session | null;
 
   if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "OPERATOR")) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -136,7 +137,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as Session | null;
 
   if (!session || (session.user?.role !== "ADMIN" && session.user?.role !== "OPERATOR")) {
     return new NextResponse("Unauthorized", { status: 401 });
