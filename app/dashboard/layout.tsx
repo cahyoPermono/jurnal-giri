@@ -89,6 +89,9 @@ export default function DashboardLayout({
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/cash-flow")}>
                 <Link href="/dashboard/reports/cash-flow">Arus Kas</Link>
               </Button>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/rekap-semester")}>
+                <Link href="/dashboard/reports/rekap-semester">Rekap Semester</Link>
+              </Button>
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/student-liabilities")}>
                 <Link href="/dashboard/reports/student-liabilities">Hutang Siswa</Link>
               </Button>
