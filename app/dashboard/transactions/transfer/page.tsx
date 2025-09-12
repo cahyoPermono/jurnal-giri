@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Wallet, ArrowRight, DollarSign } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -35,6 +35,7 @@ export default function TransferPage() {
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]);
 
   const [error, setError] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -52,6 +53,22 @@ export default function TransferPage() {
       setDate(new Date());
     }
   }, [date]);
+
+  // Validate amount against source account balance
+  useEffect(() => {
+    if (amount && sourceAccountId) {
+      const parsedAmount = parseFloat(amount);
+      const sourceAccount = financialAccounts.find(acc => acc.id === sourceAccountId);
+
+      if (sourceAccount && parsedAmount > sourceAccount.balance) {
+        setAmountError(`Insufficient funds. Available balance: Rp ${sourceAccount.balance.toLocaleString('id-ID')}`);
+      } else {
+        setAmountError(null);
+      }
+    } else {
+      setAmountError(null);
+    }
+  }, [amount, sourceAccountId, financialAccounts]);
 
   const fetchFinancialAccounts = async () => {
     try {
@@ -161,52 +178,97 @@ export default function TransferPage() {
             />
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="amount">Amount</Label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              step="0.01"
-            />
-          </div>
+          {/* Transfer Section */}
+          <div className="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
+            <div className="flex items-center justify-between gap-4">
+              {/* From Account */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Wallet className="h-4 w-4 text-blue-600" />
+                  <Label htmlFor="sourceAccount" className="text-sm font-medium">From Account</Label>
+                </div>
+                <Select value={sourceAccountId} onValueChange={setSourceAccountId}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Select source account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {financialAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {sourceAccountId && (
+                  <div className="mt-2 p-2 bg-blue-100 rounded-md">
+                    <p className="text-xs text-blue-800 font-medium">
+                      Available Balance: Rp {financialAccounts.find(acc => acc.id === sourceAccountId)?.balance?.toLocaleString('id-ID') || '0'}
+                    </p>
+                  </div>
+                )}
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="sourceAccount">From Account</Label>
-            <Select value={sourceAccountId} onValueChange={setSourceAccountId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select source account" />
-              </SelectTrigger>
-              <SelectContent>
-                {financialAccounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              {/* Arrow */}
+              <div className="flex-shrink-0">
+                <ArrowRight className="h-6 w-6 text-gray-400" />
+              </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="destinationAccount">To Account</Label>
-            <Select value={destinationAccountId} onValueChange={setDestinationAccountId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select destination account" />
-              </SelectTrigger>
-              <SelectContent>
-                {financialAccounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {/* To Account */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Wallet className="h-4 w-4 text-green-600" />
+                  <Label htmlFor="destinationAccount" className="text-sm font-medium">To Account</Label>
+                </div>
+                <Select value={destinationAccountId} onValueChange={setDestinationAccountId}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Select destination account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {financialAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {destinationAccountId && (
+                  <div className="mt-2 p-2 bg-green-100 rounded-md">
+                    <p className="text-xs text-green-800 font-medium">
+                      Current Balance: Rp {financialAccounts.find(acc => acc.id === destinationAccountId)?.balance?.toLocaleString('id-ID') || '0'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-4 w-4 text-green-600" />
+                <Label htmlFor="amount" className="text-sm font-medium">Transfer Amount</Label>
+              </div>
+              <Input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                step="0.01"
+                className={cn("bg-white", amountError && "border-red-500")}
+                placeholder="Enter amount to transfer"
+              />
+              {amountError && (
+                <p className="text-red-600 text-sm mt-1">{amountError}</p>
+              )}
+            </div>
           </div>
 
           <div className="md:col-span-2">
-            <Button type="submit" className="w-full">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!!amountError || !amount || !sourceAccountId || !destinationAccountId}
+            >
               Perform Transfer
             </Button>
           </div>

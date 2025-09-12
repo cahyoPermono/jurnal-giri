@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         throw new Error("User not found");
       }
 
-      // 1. Debit from source account
+      // Fetch both accounts first
       const sourceAccount = await tx.financialAccount.findUnique({
         where: { id: sourceAccountId },
       });
@@ -45,6 +45,15 @@ export async function POST(request: Request) {
         throw new Error("Source financial account not found");
       }
 
+      const destinationAccount = await tx.financialAccount.findUnique({
+        where: { id: destinationAccountId },
+      });
+
+      if (!destinationAccount) {
+        throw new Error("Destination financial account not found");
+      }
+
+      // 1. Debit from source account
       const newSourceBalance = sourceAccount.balance.minus(parsedAmount);
       if (newSourceBalance.lessThan(0)) {
         throw new Error("Insufficient funds in source account");
@@ -58,7 +67,7 @@ export async function POST(request: Request) {
       const debitTransaction = await tx.transaction.create({
         data: {
           date: new Date(date),
-          description: `Transfer to ${destinationAccountId}: ${description}`,
+          description: `Transfer to ${destinationAccount.name}: ${description}`,
           amount: parsedAmount,
           type: TransactionType.DEBIT,
           accountId: sourceAccountId,
@@ -70,13 +79,6 @@ export async function POST(request: Request) {
       });
 
       // 2. Credit to destination account
-      const destinationAccount = await tx.financialAccount.findUnique({
-        where: { id: destinationAccountId },
-      });
-
-      if (!destinationAccount) {
-        throw new Error("Destination financial account not found");
-      }
 
       const newDestinationBalance = destinationAccount.balance.plus(parsedAmount);
 
@@ -88,7 +90,7 @@ export async function POST(request: Request) {
       const creditTransaction = await tx.transaction.create({
         data: {
           date: new Date(date),
-          description: `Transfer from ${sourceAccountId}: ${description}`,
+          description: `Transfer from ${sourceAccount.name}: ${description}`,
           amount: parsedAmount,
           type: TransactionType.CREDIT,
           accountId: destinationAccountId,
@@ -128,8 +130,11 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(transferRecords, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating transfer:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json(
+      { message: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
