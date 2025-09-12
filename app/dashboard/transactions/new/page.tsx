@@ -129,7 +129,7 @@ export default function NewTransactionPage() {
           amount: parseFloat(amount),
           type,
           accountId,
-          categoryId: type === "CREDIT" ? categoryId : null, // Only send category for CREDIT
+          categoryId: categoryId === "none" ? null : categoryId,
           studentId: studentId === "none" ? null : studentId, // Handle "none" value
         }),
       });
@@ -248,27 +248,25 @@ export default function NewTransactionPage() {
             </Select>
           </div>
 
-          {type === "CREDIT" && (
-            <div className="grid gap-2">
-              <Label htmlFor="categoryId">Category (for Expense)</Label>
-              <Select value={categoryId} onValueChange={(value) => {
-                setCategoryId(value === "none" ? undefined : value);
-                setSelectedCategory(value === "none" ? null : categories.find(cat => cat.id === value) || null);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {filteredCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="grid gap-2">
+            <Label htmlFor="categoryId">Category</Label>
+            <Select value={categoryId} onValueChange={(value) => {
+              setCategoryId(value === "none" ? undefined : value);
+              setSelectedCategory(value === "none" ? null : categories.find(cat => cat.id === value) || null);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {filteredCategories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="grid gap-2">
             <Label htmlFor="studentId">Student (Optional)</Label>
