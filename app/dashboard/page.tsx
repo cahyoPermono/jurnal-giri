@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import type { Session } from "next-auth";
 
 export default function DashboardHomePage() {
   const { data: session, status } = useSession();
@@ -11,9 +12,10 @@ export default function DashboardHomePage() {
   useEffect(() => {
     if (status === "loading") return;
 
-    if (session?.user?.role === "ADMIN") {
+    const userRole = (session as Session)?.user?.role;
+    if (userRole === "ADMIN") {
       router.replace("/dashboard/admin");
-    } else if (session?.user?.role === "OPERATOR") {
+    } else if (userRole === "OPERATOR") {
       router.replace("/dashboard/operator");
     } else {
       // Handle cases where role is not defined or other roles
@@ -25,7 +27,7 @@ export default function DashboardHomePage() {
   }, [session, status, router]);
 
   if (status === "loading") {
-    return <p>Loading dashboard...</p>;
+    return <p>Memuat dashboard...</p>;
   }
 
   if (!session) {
@@ -34,8 +36,8 @@ export default function DashboardHomePage() {
 
   return (
     <div>
-      <h2>Welcome to your Dashboard!</h2>
-      <p>Please select an option from the sidebar.</p>
+      <h2>Selamat datang di Dashboard Anda!</h2>
+      <p>Silakan pilih opsi dari sidebar.</p>
     </div>
   );
 }

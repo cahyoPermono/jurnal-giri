@@ -188,24 +188,24 @@ export default function ManageStudentsPage() {
   };
 
   if (status === "loading") {
-    return <p>Loading...</p>;
+    return <p>Memuat...</p>;
   }
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Manage Students</CardTitle>
-        <CardDescription>Add, edit, or delete student records.</CardDescription>
+        <CardTitle>Kelola Siswa</CardTitle>
+        <CardDescription>Tambah, edit, atau hapus data siswa.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="text-lg font-semibold mb-4">Add New Student</h3>
+          <h3 className="text-lg font-semibold mb-4">Tambah Siswa Baru</h3>
           <form
             onSubmit={handleAddStudent}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end"
           >
             <div className="grid gap-2">
-              <Label htmlFor="newStudentName">Name</Label>
+              <Label htmlFor="newStudentName">Nama</Label>
               <Input
                 id="newStudentName"
                 type="text"
@@ -215,7 +215,7 @@ export default function ManageStudentsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newStudentNis">NIS (Optional)</Label>
+              <Label htmlFor="newStudentNis">NIS (Opsional)</Label>
               <Input
                 id="newStudentNis"
                 type="text"
@@ -224,7 +224,7 @@ export default function ManageStudentsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newStudentParentName">Parent Name</Label>
+              <Label htmlFor="newStudentParentName">Nama Orang Tua</Label>
               <Input
                 id="newStudentParentName"
                 type="text"
@@ -233,7 +233,7 @@ export default function ManageStudentsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newStudentContactNumber">Contact Number</Label>
+              <Label htmlFor="newStudentContactNumber">Nomor Kontak</Label>
               <Input
                 id="newStudentContactNumber"
                 type="text"
@@ -242,7 +242,7 @@ export default function ManageStudentsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newStudentEnrollmentDate">Enrollment Date</Label>
+              <Label htmlFor="newStudentEnrollmentDate">Tanggal Pendaftaran</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -256,7 +256,7 @@ export default function ManageStudentsPage() {
                     {newStudentEnrollmentDate ? (
                       format(newStudentEnrollmentDate, "PPP")
                     ) : (
-                      <span>Pick a date</span>
+                      <span>Pilih tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -271,7 +271,7 @@ export default function ManageStudentsPage() {
               </Popover>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newStudentGraduationDate">Graduation Date</Label>
+              <Label htmlFor="newStudentGraduationDate">Tanggal Kelulusan</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -285,7 +285,7 @@ export default function ManageStudentsPage() {
                     {newStudentGraduationDate ? (
                       format(newStudentGraduationDate, "PPP")
                     ) : (
-                      <span>Pick a date</span>
+                      <span>Pilih tanggal</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -300,7 +300,7 @@ export default function ManageStudentsPage() {
               </Popover>
             </div>
             <Button type="submit" className="col-span-full md:col-span-1">
-              Add Student
+              Tambah Siswa
             </Button>
           </form>
         </div>

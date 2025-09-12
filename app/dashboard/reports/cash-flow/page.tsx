@@ -76,21 +76,21 @@ export default function CashFlowReportPage() {
   };
 
   if (status === "loading") {
-    return <p>Loading...</p>;
+    return <p>Memuat...</p>;
   }
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Cash Flow Report</CardTitle>
-        <CardDescription>Summary of cash inflows and outflows.</CardDescription>
+        <CardTitle>Laporan Arus Kas</CardTitle>
+        <CardDescription>Ringkasan pemasukan dan pengeluaran kas.</CardDescription>
       </CardHeader>
       <CardContent id="cash-flow-report" className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="grid gap-2">
-            <Label htmlFor="startDate">Start Date</Label>
+            <Label htmlFor="startDate">Tanggal Mulai</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -101,7 +101,7 @@ export default function CashFlowReportPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                  {startDate ? format(startDate, "PPP") : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -116,7 +116,7 @@ export default function CashFlowReportPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="endDate">End Date</Label>
+            <Label htmlFor="endDate">Tanggal Akhir</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -127,7 +127,7 @@ export default function CashFlowReportPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                  {endDate ? format(endDate, "PPP") : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -142,29 +142,29 @@ export default function CashFlowReportPage() {
           </div>
         </div>
 
-        <Button onClick={handleExportPdf} className="mb-4">Export to PDF</Button>
+        <Button onClick={handleExportPdf} className="mb-4">Ekspor ke PDF</Button>
 
         {reportData && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <p className="text-lg font-medium">Total Cash In:</p>
-              <p className="text-lg font-bold text-green-600">{parseFloat(reportData.totalCashIn).toFixed(2)}</p>
+              <p className="text-lg font-medium">Total Pemasukan:</p>
+              <p className="text-lg font-bold text-green-600">{reportData.totalCashIn.toFixed(2)}</p>
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-lg font-medium">Total Cash Out:</p>
-              <p className="text-lg font-bold text-red-600">{parseFloat(reportData.totalCashOut).toFixed(2)}</p>
+              <p className="text-lg font-medium">Total Pengeluaran:</p>
+              <p className="text-lg font-bold text-red-600">{reportData.totalCashOut.toFixed(2)}</p>
             </div>
             <div className="flex justify-between items-center border-t pt-4">
-              <p className="text-xl font-semibold">Net Cash Flow:</p>
-              <p className={`text-xl font-bold ${parseFloat(reportData.netCashFlow) >= 0 ? "text-green-700" : "text-red-700"}`}>
-                {parseFloat(reportData.netCashFlow).toFixed(2)}
+              <p className="text-xl font-semibold">Arus Kas Bersih:</p>
+              <p className={`text-xl font-bold ${reportData.netCashFlow >= 0 ? "text-green-700" : "text-red-700"}`}>
+                {reportData.netCashFlow.toFixed(2)}
               </p>
             </div>
           </div>
         )}
 
         {!reportData && !error && (
-          <p className="text-gray-500 text-center">Select a date range to view the report.</p>
+          <p className="text-gray-500 text-center">Pilih rentang tanggal untuk melihat laporan.</p>
         )}
       </CardContent>
     </Card>

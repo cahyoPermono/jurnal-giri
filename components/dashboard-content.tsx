@@ -44,16 +44,16 @@ export default function DashboardContent() {
   };
 
   if (error) {
-    return <p className="text-red-500">Error: {error}</p>;
+    return <p className="text-red-500">Kesalahan: {error}</p>;
   }
 
   if (!summary) {
-    return <p>Loading dashboard summary...</p>;
+    return <p>Memuat ringkasan dashboard...</p>;
   }
 
   const chartData = [
-    { name: "Income (Debit)", amount: summary.monthlySummary.totalDebit },
-    { name: "Expenses (Credit)", amount: summary.monthlySummary.totalCredit },
+    { name: "Pemasukan (Debit)", amount: summary.monthlySummary.totalDebit },
+    { name: "Pengeluaran (Kredit)", amount: summary.monthlySummary.totalCredit },
   ];
 
   return (
@@ -61,8 +61,8 @@ export default function DashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Total Balance</CardTitle>
-            <CardDescription>Overall financial standing</CardDescription>
+            <CardTitle>Total Saldo</CardTitle>
+            <CardDescription>Kondisi keuangan keseluruhan</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{summary.totalBalance.toFixed(2)}</p>
@@ -73,7 +73,7 @@ export default function DashboardContent() {
           <Card key={account.id}>
             <CardHeader>
               <CardTitle>{account.name}</CardTitle>
-              <CardDescription>Account Balance</CardDescription>
+              <CardDescription>Saldo Akun</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold">{typeof account.balance === 'string' ? parseFloat(account.balance).toFixed(2) : account.balance.toFixed(2)}</p>
@@ -84,8 +84,8 @@ export default function DashboardContent() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Income vs. Expenses</CardTitle>
-          <CardDescription>Overview of financial activity this month</CardDescription>
+          <CardTitle>Pemasukan Bulanan vs Pengeluaran</CardTitle>
+          <CardDescription>Ringkasan aktivitas keuangan bulan ini</CardDescription>
         </CardHeader>
         <CardContent className="h-80">
           <ResponsiveContainer width="100%" height="100%">
@@ -104,8 +104,8 @@ export default function DashboardContent() {
       {summary.notifications.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>Important alerts and reminders</CardDescription>
+            <CardTitle>Notifikasi</CardTitle>
+            <CardDescription>Peringatan dan pengingat penting</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="list-disc pl-5 space-y-2">

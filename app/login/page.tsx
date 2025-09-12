@@ -25,7 +25,7 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Invalid email or password");
+      setError("Email atau kata sandi tidak valid");
     } else {
       const response = await fetch("/api/auth/session");
       const session = await response.json();
@@ -44,9 +44,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <Card className="w-[350px]">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardTitle className="text-2xl text-center">Masuk</CardTitle>
           <CardDescription className="text-center">
-            Enter your email and password to access your account.
+            Masukkan email dan kata sandi Anda untuk mengakses akun.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -64,7 +64,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Kata Sandi</Label>
               <Input
                 id="password"
                 type="password"
@@ -74,7 +74,7 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full">
-              Login
+              Masuk
             </Button>
           </form>
         </CardContent>
