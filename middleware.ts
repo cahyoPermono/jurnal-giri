@@ -10,6 +10,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - login (the login page)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|login|logonobg.png).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|login|logonobg.png|background.jpg).*)",
   ],
 };
