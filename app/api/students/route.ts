@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -36,10 +36,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Missing student name" }, { status: 400 });
     }
 
+    let finalNis = nis;
+    if (!finalNis) {
+      // Auto-generate NIS: YYYYMM + sequential number
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const prefix = `${year}${month}`;
+
+      const lastStudent = await prisma.student.findFirst({
+        where: { nis: { startsWith: prefix } },
+        orderBy: { nis: 'desc' }
+      });
+
+      let sequence = 1;
+      if (lastStudent) {
+        const lastSeq = parseInt(lastStudent.nis.slice(-2));
+        sequence = lastSeq + 1;
+      }
+
+      finalNis = `${prefix}${String(sequence).padStart(2, '0')}`;
+    }
+
     const newStudent = await prisma.student.create({
       data: {
         name,
-        nis: nis || undefined,
+        nis: finalNis,
         parentName: parentName || undefined,
         contactNumber: contactNumber || undefined,
         enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : undefined,

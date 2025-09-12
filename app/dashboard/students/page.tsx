@@ -58,13 +58,9 @@ export default function ManageStudentsPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [newStudentName, setNewStudentName] = useState("");
-  const [newStudentNis, setNewStudentNis] = useState("");
   const [newStudentParentName, setNewStudentParentName] = useState("");
   const [newStudentContactNumber, setNewStudentContactNumber] = useState("");
   const [newStudentEnrollmentDate, setNewStudentEnrollmentDate] = useState<
-    Date | undefined
-  >(undefined);
-  const [newStudentGraduationDate, setNewStudentGraduationDate] = useState<
     Date | undefined
   >(undefined);
 
@@ -106,11 +102,9 @@ export default function ManageStudentsPage() {
         },
         body: JSON.stringify({
           name: newStudentName,
-          nis: newStudentNis,
           parentName: newStudentParentName || null,
           contactNumber: newStudentContactNumber || null,
           enrollmentDate: newStudentEnrollmentDate?.toISOString() || null,
-          graduationDate: newStudentGraduationDate?.toISOString() || null,
         }),
       });
 
@@ -121,11 +115,9 @@ export default function ManageStudentsPage() {
 
       toast.success("Student added successfully!");
       setNewStudentName("");
-      setNewStudentNis("");
       setNewStudentParentName("");
       setNewStudentContactNumber("");
       setNewStudentEnrollmentDate(undefined);
-      setNewStudentGraduationDate(undefined);
       fetchStudents(); // Refresh the list
     } catch (err: any) {
       toast.error("Failed to add student: " + err.message);
@@ -216,15 +208,7 @@ export default function ManageStudentsPage() {
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="newStudentNis">NIS (Opsional)</Label>
-              <Input
-                id="newStudentNis"
-                type="text"
-                value={newStudentNis}
-                onChange={(e) => setNewStudentNis(e.target.value)}
-              />
-            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="newStudentParentName">Nama Orang Tua</Label>
               <Input
@@ -272,35 +256,7 @@ export default function ManageStudentsPage() {
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="newStudentGraduationDate">Tanggal Kelulusan</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !newStudentGraduationDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {newStudentGraduationDate ? (
-                      format(newStudentGraduationDate, "PPP")
-                    ) : (
-                      <span>Pilih tanggal</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={newStudentGraduationDate}
-                    onSelect={setNewStudentGraduationDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+
             <Button type="submit" className="col-span-full md:col-span-1">
               Tambah Siswa
             </Button>
