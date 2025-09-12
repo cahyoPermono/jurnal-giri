@@ -112,10 +112,10 @@ export default function ViewTransactionsPage() {
     const params = new URLSearchParams();
     if (startDate) params.append("startDate", startDate.toISOString());
     if (endDate) params.append("endDate", endDate.toISOString());
-    if (typeFilter) params.append("type", typeFilter);
-    if (accountFilter) params.append("accountId", accountFilter);
-    if (categoryFilter) params.append("categoryId", categoryFilter);
-    if (studentFilter) params.append("studentId", studentFilter);
+    if (typeFilter && typeFilter !== "all") params.append("type", typeFilter);
+    if (accountFilter && accountFilter !== "all") params.append("accountId", accountFilter);
+    if (categoryFilter && categoryFilter !== "all") params.append("categoryId", categoryFilter);
+    if (studentFilter && studentFilter !== "all") params.append("studentId", studentFilter);
 
     try {
       const res = await fetch(`/api/transactions?${params.toString()}`);

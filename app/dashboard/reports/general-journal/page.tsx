@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -27,6 +28,27 @@ interface Transaction {
   category?: { name: string };
   student?: { name: string };
   user: { name: string };
+  // Denormalized fields for data integrity
+  accountName?: string;
+  categoryName?: string;
+  studentName?: string;
+  userName?: string;
+}
+
+interface FinancialAccount {
+  id: string;
+  name: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  type: "DEBIT" | "CREDIT" | "TRANSFER";
+}
+
+interface Student {
+  id: string;
+  name: string;
 }
 
 export default function GeneralJournalReportPage() {
@@ -36,6 +58,14 @@ export default function GeneralJournalReportPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [accountFilter, setAccountFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [studentFilter, setStudentFilter] = useState<string>("all");
+
+  const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +76,7 @@ export default function GeneralJournalReportPage() {
       router.push("/login");
     }
 
+    fetchFilterData();
     fetchTransactions();
   }, [session, status, router]);
 
@@ -59,11 +90,44 @@ export default function GeneralJournalReportPage() {
     }
   }, [startDate, endDate]);
 
+  useEffect(() => {
+    fetchTransactions();
+  }, [startDate, endDate, typeFilter, accountFilter, categoryFilter, studentFilter]);
+
+  const fetchFilterData = async () => {
+    try {
+      const [accountsRes, categoriesRes, studentsRes] = await Promise.all([
+        fetch("/api/financial-accounts"),
+        fetch("/api/categories"),
+        fetch("/api/students"),
+      ]);
+
+      if (!accountsRes.ok || !categoriesRes.ok || !studentsRes.ok) {
+        throw new Error("Failed to fetch filter data");
+      }
+
+      const accountsData = await accountsRes.json();
+      const categoriesData = await categoriesRes.json();
+      const studentsData = await studentsRes.json();
+
+      setFinancialAccounts(accountsData);
+      setCategories(categoriesData);
+      setStudents(studentsData);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error("Failed to fetch filter data: " + err.message);
+    }
+  };
+
   const fetchTransactions = async () => {
     setError(null);
     const params = new URLSearchParams();
     if (startDate) params.append("startDate", startDate.toISOString());
     if (endDate) params.append("endDate", endDate.toISOString());
+    if (typeFilter && typeFilter !== "all") params.append("type", typeFilter);
+    if (accountFilter && accountFilter !== "all") params.append("accountId", accountFilter);
+    if (categoryFilter && categoryFilter !== "all") params.append("categoryId", categoryFilter);
+    if (studentFilter && studentFilter !== "all") params.append("studentId", studentFilter);
 
     try {
       const res = await fetch(`/api/transactions?${params.toString()}`);
@@ -87,6 +151,8 @@ export default function GeneralJournalReportPage() {
     return <p>Loading...</p>;
   }
 
+  const filteredCategoriesForFilter = categories.filter(cat => typeFilter === "all" || cat.type === typeFilter);
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -96,7 +162,7 @@ export default function GeneralJournalReportPage() {
       <CardContent id="general-journal-report" className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           <div className="grid gap-2">
             <Label htmlFor="startDate">Start Date</Label>
             <Popover>
@@ -148,6 +214,71 @@ export default function GeneralJournalReportPage() {
               </PopoverContent>
             </Popover>
           </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="typeFilter">Type</Label>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="DEBIT">DEBIT (Income)</SelectItem>
+                <SelectItem value="CREDIT">CREDIT (Expense)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="accountFilter">Account</Label>
+            <Select value={accountFilter} onValueChange={setAccountFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Accounts</SelectItem>
+                {financialAccounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="categoryFilter">Category</Label>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {filteredCategoriesForFilter.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="studentFilter">Student</Label>
+            <Select value={studentFilter} onValueChange={setStudentFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                {students.map((student) => (
+                  <SelectItem key={student.id} value={student.id}>
+                    {student.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Button onClick={handleExportPdf} className="mb-4">Export to PDF</Button>
@@ -178,12 +309,12 @@ export default function GeneralJournalReportPage() {
                   <TableRow key={transaction.id}>
                     <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                     <TableCell>{transaction.description}</TableCell>
-                    <TableCell>{parseFloat(transaction.amount).toFixed(2)}</TableCell>
+                    <TableCell>{Number(transaction.amount).toFixed(2)}</TableCell>
                     <TableCell>{transaction.type}</TableCell>
-                    <TableCell>{transaction.account.name}</TableCell>
-                    <TableCell>{transaction.category?.name || "-"}</TableCell>
-                    <TableCell>{transaction.student?.name || "-"}</TableCell>
-                    <TableCell>{transaction.user.name}</TableCell>
+                    <TableCell>{transaction.accountName || transaction.account?.name || "-"}</TableCell>
+                    <TableCell>{transaction.categoryName || transaction.category?.name || "-"}</TableCell>
+                    <TableCell>{transaction.studentName || transaction.student?.name || "-"}</TableCell>
+                    <TableCell>{transaction.userName || transaction.user?.name || "-"}</TableCell>
                   </TableRow>
                 ))
               )}
