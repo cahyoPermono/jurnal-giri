@@ -11,6 +11,7 @@ export async function exportToPdf(elementId: string, filename: string) {
     // Check if this is the rekap-semester report
     const isRekapSemester = elementId === 'rekap-semester-report';
     const isRekapPenerimaanBulan = elementId === 'rekap-penerimaan-bulan-report';
+    const isLaporanKeuanganBulanan = elementId === 'laporan-keuangan-bulanan-report';
 
     // Extract table data directly from the DOM
     const table = input.querySelector('table');
@@ -80,6 +81,31 @@ export async function exportToPdf(elementId: string, filename: string) {
       pdf.setFontSize(12);
       pdf.text(`BULAN ${monthName} ${year}`, pageWidth / 2, yPosition, { align: 'center' });
       yPosition += 15;
+    } else if (isLaporanKeuanganBulanan) {
+      // Custom header for laporan keuangan bulanan
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('LAPORAN KEUANGAN BULANAN', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
+
+      pdf.setFontSize(12);
+      pdf.text('KB SUNAN GIRI', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
+
+      // Extract month and year from the page
+      const monthElements = input.querySelectorAll('p');
+      let monthName = '';
+      let year = '';
+      monthElements.forEach(p => {
+        const text = p.textContent || '';
+        const monthMatch = text.match(/Bulan: ([^\n]+)/);
+        const yearMatch = text.match(/Tahun: (\d{4})/);
+        if (monthMatch) monthName = monthMatch[1].trim();
+        if (yearMatch) year = yearMatch[1];
+      });
+
+      pdf.text(`BULAN ${monthName} ${year}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
     } else if (elementId === 'transactions-table') {
       // Custom header for transactions table
       pdf.setFontSize(18);
@@ -135,7 +161,7 @@ export async function exportToPdf(elementId: string, filename: string) {
       rows.push(rowData);
     });
 
-    // Calculate column widths - custom widths for rekap penerimaan bulan
+    // Calculate column widths - custom widths for different reports
     let columnWidths: number[] = [];
     if (isRekapPenerimaanBulan) {
       // Custom widths: No (narrow), Tanggal, Uraian (wide), Debet, Saldo
@@ -147,13 +173,24 @@ export async function exportToPdf(elementId: string, filename: string) {
         totalWidth * 0.17, // Debet - 17%
         totalWidth * 0.17  // Saldo - 17%
       ];
+    } else if (isLaporanKeuanganBulanan) {
+      // Custom widths for laporan keuangan bulanan: No, Penerimaan, Total, No, Pengeluaran, Total
+      const totalWidth = pageWidth - 2 * margin;
+      columnWidths = [
+        totalWidth * 0.05, // No1 - 5%
+        totalWidth * 0.20, // Penerimaan - 20%
+        totalWidth * 0.20, // Total Penerimaan - 20%
+        totalWidth * 0.05, // No2 - 5%
+        totalWidth * 0.20, // Pengeluaran - 20%
+        totalWidth * 0.20  // Total Pengeluaran - 20%
+      ];
     } else {
       // Equal widths for other reports
       const columnWidth = (pageWidth - 2 * margin) / headers.length;
       columnWidths = new Array(headers.length).fill(columnWidth);
     }
 
-    if (isRekapSemester || isRekapPenerimaanBulan) {
+    if (isRekapSemester || isRekapPenerimaanBulan || isLaporanKeuanganBulanan) {
       // Draw table with full borders for rekap reports
       const tableStartY = yPosition;
       const rowHeight = 10;
@@ -225,6 +262,25 @@ export async function exportToPdf(elementId: string, filename: string) {
 
         yPosition += maxRowHeight;
       });
+
+      // Add saldo akhir for laporan keuangan bulanan
+      if (isLaporanKeuanganBulanan) {
+        yPosition += 10;
+        // Extract saldo akhir from the page
+        const saldoAkhirElements = input.querySelectorAll('p');
+        let saldoAkhir = '';
+        saldoAkhirElements.forEach(p => {
+          const text = p.textContent || '';
+          const saldoMatch = text.match(/Saldo akhir bulan: (.+)/);
+          if (saldoMatch) saldoAkhir = saldoMatch[1].trim();
+        });
+        if (saldoAkhir) {
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Saldo akhir bulan: ${saldoAkhir}`, pageWidth - margin - 80, yPosition);
+          yPosition += 15;
+        }
+      }
 
       // Add signature section
       yPosition += 10;

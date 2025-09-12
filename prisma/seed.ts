@@ -7,8 +7,10 @@ async function main() {
   console.log("Start seeding ...");
 
   const hashedPasswordAdmin = await bcrypt.hash("password", 10);
-  await prisma.user.create({
-    data: {
+  await prisma.user.upsert({
+    where: { email: "admin@girifinancials.com" },
+    update: {},
+    create: {
       email: "admin@girifinancials.com",
       name: "Admin",
       password: hashedPasswordAdmin,
@@ -17,8 +19,10 @@ async function main() {
   });
 
   const hashedPasswordOperator = await bcrypt.hash("password", 10);
-  await prisma.user.create({
-    data: {
+  await prisma.user.upsert({
+    where: { email: "operator@girifinancials.com" },
+    update: {},
+    create: {
       email: "operator@girifinancials.com",
       name: "Operator",
       password: hashedPasswordOperator,
@@ -35,8 +39,29 @@ async function main() {
   ];
 
   for (const account of accounts) {
-    await prisma.financialAccount.create({
-      data: account,
+    await prisma.financialAccount.upsert({
+      where: { name: account.name },
+      update: {},
+      create: account,
+    });
+  }
+
+  // Create categories
+  const sppAccount = await prisma.financialAccount.findUnique({ where: { name: "SPP" } });
+  const kegiatanAccount = await prisma.financialAccount.findUnique({ where: { name: "Kegiatan" } });
+  const bankAccount = await prisma.financialAccount.findUnique({ where: { name: "Bank" } });
+
+  const categories = [
+    { name: "Rutin", type: "CREDIT" as const, financialAccountId: sppAccount?.id },
+    { name: "Kegiatan", type: "CREDIT" as const, financialAccountId: kegiatanAccount?.id },
+    { name: "Setor bank", type: "CREDIT" as const, financialAccountId: bankAccount?.id },
+  ];
+
+  for (const category of categories) {
+    await prisma.category.upsert({
+      where: { name: category.name },
+      update: {},
+      create: category,
     });
   }
 
