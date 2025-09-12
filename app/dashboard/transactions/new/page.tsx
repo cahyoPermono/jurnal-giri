@@ -195,7 +195,7 @@ export default function NewTransactionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="date" className="flex items-center text-sm font-medium">
-                <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                 Tanggal
               </Label>
               <Popover>
@@ -224,7 +224,7 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="description" className="flex items-center text-sm font-medium">
-                <FileTextIcon className="mr-2 h-4 w-4 text-green-500" />
+                <FileTextIcon className="mr-2 h-4 w-4 text-chart-1" />
                 Deskripsi
               </Label>
               <Input
@@ -240,7 +240,7 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="amount" className="flex items-center text-sm font-medium">
-                <DollarSignIcon className="mr-2 h-4 w-4 text-yellow-500" />
+                <DollarSignIcon className="mr-2 h-4 w-4 text-chart-2" />
                 Jumlah
               </Label>
               <Input
@@ -257,7 +257,7 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="type" className="flex items-center text-sm font-medium">
-                <TagIcon className="mr-2 h-4 w-4 text-purple-500" />
+                <TagIcon className="mr-2 h-4 w-4 text-chart-3" />
                 Jenis Transaksi
               </Label>
               <Select value={type} onValueChange={(value: "DEBIT" | "CREDIT") => setType(value)}>
@@ -276,7 +276,7 @@ export default function NewTransactionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="categoryId" className="flex items-center text-sm font-medium">
-                <TagIcon className="mr-2 h-4 w-4 text-indigo-500" />
+                <TagIcon className="mr-2 h-4 w-4 text-chart-4" />
                 Kategori
               </Label>
               <Select value={categoryId} onValueChange={(value) => {
@@ -299,7 +299,7 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="accountId" className="flex items-center text-sm font-medium">
-                <WalletIcon className="mr-2 h-4 w-4 text-teal-500" />
+                <WalletIcon className="mr-2 h-4 w-4 text-chart-5" />
                 Akun Keuangan
               </Label>
               <Select value={accountId} onValueChange={setAccountId}>
@@ -318,7 +318,7 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="studentId" className="flex items-center text-sm font-medium">
-                <UserIcon className="mr-2 h-4 w-4 text-orange-500" />
+                <UserIcon className="mr-2 h-4 w-4 text-secondary" />
                 Siswa {isStudentRequired ? "" : "(Opsional)"}
               </Label>
               <Select value={studentId} onValueChange={setStudentId} required={isStudentRequired}>
@@ -339,7 +339,7 @@ export default function NewTransactionPage() {
 
           {/* Submit Button */}
           <div className="pt-4">
-            <Button type="submit" className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700">
+            <Button type="submit" className="w-full h-12 text-lg font-semibold">
               <DollarSignIcon className="mr-2 h-5 w-5" />
               Catat Transaksi
             </Button>
