@@ -141,9 +141,9 @@ export async function exportToPdf(elementId: string, filename: string) {
       // Custom widths: No (narrow), Tanggal, Uraian (wide), Debet, Saldo
       const totalWidth = pageWidth - 2 * margin;
       columnWidths = [
-        totalWidth * 0.08, // No - 8%
-        totalWidth * 0.18, // Tanggal - 18%
-        totalWidth * 0.40, // Uraian - 40%
+        totalWidth * 0.05, // No - 5%
+        totalWidth * 0.25, // Tanggal - 25%
+        totalWidth * 0.36, // Uraian - 36%
         totalWidth * 0.17, // Debet - 17%
         totalWidth * 0.17  // Saldo - 17%
       ];
@@ -174,6 +174,10 @@ export async function exportToPdf(elementId: string, filename: string) {
         // Draw vertical lines
         pdf.line(x, tableStartY - 5, x, tableStartY - 5 + rowHeight);
       });
+      // Draw the rightmost vertical line for the header
+      const lastHeaderX = margin + tableWidth;
+      pdf.line(lastHeaderX, tableStartY - 5, lastHeaderX, tableStartY - 5 + rowHeight);
+
 
       // Draw header borders
       pdf.rect(margin, yPosition - 5, tableWidth, rowHeight);
@@ -182,35 +186,43 @@ export async function exportToPdf(elementId: string, filename: string) {
       // Draw table rows with borders
       pdf.setFont('helvetica', 'normal');
       rows.forEach((row) => {
-        let currentY = yPosition;
+        const currentY = yPosition;
         let maxRowHeight = rowHeight;
+
+        // Pre-calculate max row height if it's the rekap-penerimaan-bulan report
+        if (isRekapPenerimaanBulan) {
+          const uraianCellText = row[2] || '';
+          const uraianCellWidth = columnWidths[2] - 4; // account for padding
+          const lines = pdf.splitTextToSize(uraianCellText, uraianCellWidth);
+          const textHeight = lines.length * 5; // approximate line height. 5mm per line.
+          const requiredHeight = textHeight + 8; // text starts at y+3, rect at y-5, so 8mm difference for padding
+          if (requiredHeight > maxRowHeight) {
+            maxRowHeight = requiredHeight;
+          }
+        }
+
+        // Draw the rectangle for the entire row
+        pdf.rect(margin, currentY - 5, tableWidth, maxRowHeight);
 
         row.forEach((cell, cellIndex) => {
           const x = margin + columnWidths.slice(0, cellIndex).reduce((sum, width) => sum + width, 0);
-          const cellWidth = columnWidths[cellIndex] - 4; // Account for padding
+          const cellWidth = columnWidths[cellIndex] - 4;
 
-          if (cellIndex === 2) { // Uraian column (index 2: No, Tanggal, Uraian, Debet, Saldo)
-            // Handle text wrapping for Uraian column
+          // Draw cell content
+          if (isRekapPenerimaanBulan && cellIndex === 2) {
             const lines = pdf.splitTextToSize(cell, cellWidth);
-            const cellHeight = lines.length * 5; // Approximate line height
-            if (cellHeight > maxRowHeight) {
-              maxRowHeight = cellHeight + 10; // Add some padding
-            }
-
-            // Draw wrapped text
             pdf.text(lines, x + 2, currentY + 3);
           } else {
-            // Regular text for other columns
             pdf.text(cell, x + 2, currentY + 3);
           }
 
-          // Draw vertical lines for each cell
+          // Draw vertical divider lines
           const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
-          pdf.line(nextX, yPosition - 5, nextX, yPosition - 5 + maxRowHeight);
+          if (cellIndex < headers.length - 1) {
+            pdf.line(nextX, currentY - 5, nextX, currentY - 5 + maxRowHeight);
+          }
         });
 
-        // Draw horizontal line and rectangle for row with adjusted height
-        pdf.rect(margin, yPosition - 5, tableWidth, maxRowHeight);
         yPosition += maxRowHeight;
       });
 
