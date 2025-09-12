@@ -134,10 +134,9 @@ model Transaction {
   studentName     String?
   userName        String?
 
-  // For transfers
-  relatedTransaction   Transaction? @relation("TransactionTransfer", fields: [relatedTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  relatedTransactionId String?      @unique
-  sourceTransaction    Transaction? @relation("TransactionTransfer")
+  // Balance tracking
+  balanceBefore   Decimal?
+  balanceAfter    Decimal?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

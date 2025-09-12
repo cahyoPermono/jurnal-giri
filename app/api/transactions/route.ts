@@ -46,6 +46,24 @@ export async function POST(request: Request) {
         throw new Error("User not found");
       }
 
+      // Get current balance before transaction
+      const currentAccount = await tx.financialAccount.findUnique({
+        where: { id: accountId },
+      });
+
+      if (!currentAccount) {
+        throw new Error("Financial account not found");
+      }
+
+      const balanceBefore = currentAccount.balance;
+      let balanceAfter = currentAccount.balance;
+
+      if (type === TransactionType.DEBIT) {
+        balanceAfter = balanceAfter.plus(parsedAmount);
+      } else if (type === TransactionType.CREDIT) {
+        balanceAfter = balanceAfter.minus(parsedAmount);
+      }
+
       const newTransaction = await tx.transaction.create({
         data: {
           date: new Date(date),
@@ -61,6 +79,9 @@ export async function POST(request: Request) {
           categoryName: category?.name || null,
           studentName: student?.name || null,
           userName: user.name || user.email || "Unknown User",
+          // Balance tracking
+          balanceBefore,
+          balanceAfter,
         },
       });
 
@@ -81,24 +102,9 @@ export async function POST(request: Request) {
       });
 
       // Update financial account balance
-      const financialAccount = await tx.financialAccount.findUnique({
-        where: { id: accountId },
-      });
-
-      if (!financialAccount) {
-        throw new Error("Financial account not found");
-      }
-
-      let newBalance = financialAccount.balance;
-      if (type === TransactionType.DEBIT) {
-        newBalance = newBalance.plus(parsedAmount);
-      } else if (type === TransactionType.CREDIT) {
-        newBalance = newBalance.minus(parsedAmount);
-      }
-
       await tx.financialAccount.update({
         where: { id: accountId },
-        data: { balance: newBalance },
+        data: { balance: balanceAfter },
       });
 
       return newTransaction;
@@ -150,7 +156,6 @@ export async function GET(request: Request) {
 
     const transactions = await prisma.transaction.findMany({
       where,
-      include: { account: true, category: true, student: true, user: true },
       orderBy: { date: "desc" },
     });
 

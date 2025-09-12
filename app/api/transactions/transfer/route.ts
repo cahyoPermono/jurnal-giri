@@ -75,6 +75,9 @@ export async function POST(request: Request) {
           // Denormalized fields for data integrity
           accountName: sourceAccount.name,
           userName: user.name || user.email || "Unknown User",
+          // Balance tracking
+          balanceBefore: sourceAccount.balance,
+          balanceAfter: newSourceBalance,
         },
       });
 
@@ -98,18 +101,13 @@ export async function POST(request: Request) {
           // Denormalized fields for data integrity
           accountName: destinationAccount.name,
           userName: user.name || user.email || "Unknown User",
+          // Balance tracking
+          balanceBefore: destinationAccount.balance,
+          balanceAfter: newDestinationBalance,
         },
       });
 
-      // Link the two transactions for audit/tracking
-      await tx.transaction.update({
-        where: { id: debitTransaction.id },
-        data: { relatedTransactionId: creditTransaction.id },
-      });
-      await tx.transaction.update({
-        where: { id: creditTransaction.id },
-        data: { relatedTransactionId: debitTransaction.id },
-      });
+
 
       // Create audit log for transfer
       await tx.auditLog.create({
