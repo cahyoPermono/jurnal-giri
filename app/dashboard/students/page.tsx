@@ -93,6 +93,8 @@ export default function ManageStudentsPage() {
     }
   };
 
+
+
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -403,6 +405,8 @@ export default function ManageStudentsPage() {
             </div>
           )}
         </div>
+
+
 
         {editingStudent && (
           <Dialog

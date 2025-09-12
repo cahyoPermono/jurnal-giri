@@ -11,6 +11,18 @@ interface FinancialAccount {
   balance: number;
 }
 
+interface Student {
+  id: string;
+  nis: string;
+  name: string;
+  parentName: string | null;
+  contactNumber: string | null;
+  active: boolean;
+  enrollmentDate: string | null;
+  graduationDate: string | null;
+  createdAt: string;
+}
+
 interface DashboardSummary {
   totalBalance: number;
   financialAccounts: FinancialAccount[];
@@ -24,10 +36,12 @@ interface DashboardSummary {
 export default function DashboardContent() {
   const { data: session } = useSession();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [unpaidStudents, setUnpaidStudents] = useState<Student[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardSummary();
+    fetchUnpaidStudents();
   }, []);
 
   const fetchDashboardSummary = async () => {
@@ -40,6 +54,51 @@ export default function DashboardContent() {
       setSummary(data);
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const fetchUnpaidStudents = async () => {
+    try {
+      // Fetch students
+      const studentsRes = await fetch("/api/students");
+      if (!studentsRes.ok) throw new Error("Failed to fetch students");
+      const students = await studentsRes.json();
+
+      // Fetch financial accounts
+      const accRes = await fetch("/api/financial-accounts");
+      if (!accRes.ok) throw new Error("Failed to fetch financial accounts");
+      const accounts = await accRes.json();
+
+      const sppAccount = accounts.find((a: any) =>
+        a.name.toLowerCase().includes("spp") ||
+        a.name.toLowerCase().includes("sumbangan")
+      );
+
+      if (!sppAccount) {
+        setUnpaidStudents([]);
+        return;
+      }
+
+      // Get current month
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      // Fetch transactions with DEBIT type for SPP account
+      const transRes = await fetch(
+        `/api/transactions?accountId=${sppAccount.id}&type=DEBIT&startDate=${startOfMonth.toISOString()}&endDate=${endOfMonth.toISOString()}`
+      );
+      if (!transRes.ok) throw new Error("Failed to fetch transactions");
+      const transactions = await transRes.json();
+
+      const paidStudentIds = new Set(
+        transactions.filter((t: any) => t.studentId).map((t: any) => t.studentId)
+      );
+
+      const unpaid = students.filter((s: Student) => s.active && !paidStudentIds.has(s.id));
+      setUnpaidStudents(unpaid);
+    } catch (err: any) {
+      console.error("Error fetching unpaid students:", err);
     }
   };
 
@@ -100,6 +159,41 @@ export default function DashboardContent() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {unpaidStudents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>⚠️ Siswa Belum Bayar SPP Bulan Ini</CardTitle>
+            <CardDescription>
+              {unpaidStudents.length} siswa aktif yang perlu ditagih SPP bulan ini
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {unpaidStudents.map((student) => (
+                <div key={student.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div>
+                    <p className="font-medium text-gray-900">{student.name}</p>
+                    <p className="text-sm text-gray-600">
+                      NIS: {student.nis} | Orang Tua: {student.parentName || "Tidak ada"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">
+                      {student.contactNumber || "No contact"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-3 border-t">
+              <p className="text-sm text-gray-600">
+                💡 Klik menu "Kelola Siswa" untuk melihat detail lengkap dan mengelola data siswa
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {summary.notifications.length > 0 && (
         <Card>
