@@ -3,9 +3,11 @@ import DashboardContent from "@/components/dashboard-content";
 
 export default function AdminDashboardPage() {
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Ringkasan Admin</h2>
-      <p className="text-gray-600">Ini adalah konten khusus admin. Gunakan sidebar untuk navigasi.</p>
+    <div className="space-y-6">
+      <div className="border-b pb-4">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard Utama</h1>
+        <p className="text-gray-600 mt-2">Ringkasan keuangan dan aktivitas sekolah</p>
+      </div>
       <DashboardContent />
     </div>
   );

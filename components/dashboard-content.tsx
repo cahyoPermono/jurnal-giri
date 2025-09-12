@@ -4,6 +4,18 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { formatCurrency } from "@/lib/utils";
+import {
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  AlertTriangle,
+  DollarSign,
+  CreditCard,
+  Landmark,
+  BarChart3
+} from "lucide-react";
 
 interface FinancialAccount {
   id: string;
@@ -115,96 +127,218 @@ export default function DashboardContent() {
     { name: "Pengeluaran (Kredit)", amount: summary.monthlySummary.totalCredit },
   ];
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-medium">{label}</p>
+          <p className="text-blue-600">
+            {formatCurrency(payload[0].value)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
+
+      {/* Unpaid Students Alert */}
       {unpaidStudents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>⚠️ Siswa Belum Bayar SPP Bulan Ini</CardTitle>
-            <CardDescription>
-              {unpaidStudents.length} siswa aktif yang perlu ditagih SPP bulan ini
-            </CardDescription>
+        <Card className="border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-amber-100 rounded-full">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-amber-900 text-base">Siswa Belum Bayar SPP</CardTitle>
+                  <CardDescription className="text-amber-700 text-sm">
+                    {unpaidStudents.length} siswa perlu ditagih
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  {unpaidStudents.length} siswa
+                </span>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+          <CardContent className="pt-0">
+            <div className={`space-y-1.5 ${unpaidStudents.length > 3 ? 'max-h-48 overflow-y-auto' : ''}`}>
               {unpaidStudents.map((student) => (
-                <div key={student.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div>
-                    <p className="font-medium text-gray-900">{student.name}</p>
-                    <p className="text-sm text-gray-600">
-                      NIS: {student.nis} | Orang Tua: {student.parentName || "Tidak ada"}
+                <div key={student.id} className="flex items-center gap-3 p-2 bg-white/60 rounded-md border border-amber-200/50 hover:bg-white/80 transition-colors">
+                  <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Users className="h-3 w-3 text-amber-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 text-sm truncate">{student.name}</p>
+                    <p className="text-xs text-gray-600 truncate">
+                      NIS: {student.nis}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs text-gray-500">
                       {student.contactNumber || "No contact"}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-3 border-t">
-              <p className="text-sm text-gray-600">
-                💡 Klik menu "Kelola Siswa" untuk melihat detail lengkap dan mengelola data siswa
+            <div className="mt-3 pt-2 border-t border-amber-200/50">
+              <p className="text-xs text-amber-700 flex items-center gap-1">
+                <span className="text-amber-500">💡</span>
+                Kelola siswa di menu "Kelola Siswa"
               </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Saldo</CardTitle>
-            <CardDescription>Kondisi keuangan keseluruhan</CardDescription>
+      {/* Financial Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Total Balance Card */}
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <Wallet className="h-5 w-5" />
+              Total Saldo
+            </CardTitle>
+            <CardDescription className="text-green-600">Kondisi keuangan keseluruhan</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{summary.totalBalance.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-green-900">{formatCurrency(summary.totalBalance)}</p>
+            <div className="flex items-center mt-2">
+              <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+              <span className="text-sm text-green-600">Saldo terkini</span>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Monthly Debit Card */}
+        <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <TrendingUp className="h-5 w-5" />
+              Pemasukan Bulan Ini
+            </CardTitle>
+            <CardDescription className="text-blue-600">Total debit bulan ini</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-blue-900">{formatCurrency(summary.monthlySummary.totalDebit)}</p>
+            <div className="flex items-center mt-2">
+              <DollarSign className="h-4 w-4 text-blue-600 mr-1" />
+              <span className="text-sm text-blue-600">Dana masuk</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Credit Card */}
+        <Card className="bg-gradient-to-br from-red-50 to-pink-50 border-red-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <TrendingDown className="h-5 w-5" />
+              Pengeluaran Bulan Ini
+            </CardTitle>
+            <CardDescription className="text-red-600">Total kredit bulan ini</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-red-900">{formatCurrency(summary.monthlySummary.totalCredit)}</p>
+            <div className="flex items-center mt-2">
+              <CreditCard className="h-4 w-4 text-red-600 mr-1" />
+              <span className="text-sm text-red-600">Dana keluar</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Individual Account Cards */}
         {summary.financialAccounts.map((account) => (
-          <Card key={account.id}>
-            <CardHeader>
-              <CardTitle>{account.name}</CardTitle>
-              <CardDescription>Saldo Akun</CardDescription>
+          <Card key={account.id} className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <Landmark className="h-5 w-5" />
+                {account.name}
+              </CardTitle>
+              <CardDescription className="text-gray-600">Saldo Akun</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-semibold">{typeof account.balance === 'string' ? parseFloat(account.balance).toFixed(2) : account.balance.toFixed(2)}</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {formatCurrency(account.balance)}
+              </p>
+              <div className="flex items-center mt-2">
+                <Wallet className="h-4 w-4 text-gray-600 mr-1" />
+                <span className="text-sm text-gray-600">Saldo terkini</span>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card>
+      {/* Monthly Chart */}
+      <Card className="bg-white border-gray-200">
         <CardHeader>
-          <CardTitle>Pemasukan Bulanan vs Pengeluaran</CardTitle>
-          <CardDescription>Ringkasan aktivitas keuangan bulan ini</CardDescription>
+          <CardTitle className="flex items-center gap-2 text-gray-800">
+            <BarChart3 className="h-5 w-5" />
+            Pemasukan vs Pengeluaran Bulanan
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Ringkasan aktivitas keuangan bulan ini
+          </CardDescription>
         </CardHeader>
         <CardContent className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="name"
+                stroke="#666"
+                fontSize={12}
+                tick={{ fill: '#666' }}
+              />
+              <YAxis
+                stroke="#666"
+                fontSize={12}
+                tick={{ fill: '#666' }}
+                tickFormatter={(value) => formatCurrency(value)}
+              />
+              <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="amount" fill="#8884d8" />
+              <Bar
+                dataKey="amount"
+                fill="url(#colorGradient)"
+                radius={[4, 4, 0, 0]}
+              />
+              <defs>
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#1d4ed8" stopOpacity={0.8}/>
+                </linearGradient>
+              </defs>
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
+      {/* Notifications */}
       {summary.notifications.length > 0 && (
-        <Card>
+        <Card className="border-yellow-200 bg-yellow-50">
           <CardHeader>
-            <CardTitle>Notifikasi</CardTitle>
-            <CardDescription>Peringatan dan pengingat penting</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-yellow-800">
+              <AlertTriangle className="h-5 w-5" />
+              Notifikasi
+            </CardTitle>
+            <CardDescription className="text-yellow-700">
+              Peringatan dan pengingat penting
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc pl-5 space-y-2">
+            <ul className="space-y-2">
               {summary.notifications.map((notification, index) => (
-                <li key={index} className="text-sm text-yellow-700">
+                <li key={index} className="flex items-start gap-2 text-sm text-yellow-800">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   {notification}
                 </li>
               ))}
