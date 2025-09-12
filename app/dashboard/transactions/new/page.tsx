@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileTextIcon, DollarSignIcon, TagIcon, WalletIcon, UserIcon } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -125,7 +125,7 @@ export default function NewTransactionPage() {
       if (accountsData.length > 0) setAccountId(accountsData[0].id);
     } catch (err: any) {
       setError(err.message);
-      toast.error("Failed to fetch form data: " + err.message);
+      toast.error("Gagal mengambil data formulir: " + err.message);
     }
   };
 
@@ -134,7 +134,7 @@ export default function NewTransactionPage() {
 
     // Validate required student field
     if (isStudentRequired && (!studentId || studentId === "none")) {
-      toast.error("Student is required when Financial Account is SPP or Pendaftaran");
+      toast.error("Siswa wajib diisi ketika Akun Keuangan adalah SPP atau Pendaftaran");
       return;
     }
 
@@ -160,14 +160,14 @@ export default function NewTransactionPage() {
         throw new Error(errorData.message || "Failed to add transaction");
       }
 
-      toast.success("Transaction added successfully!");
+      toast.success("Transaksi berhasil ditambahkan!");
       setDate(new Date());
       setDescription("");
       setAmount("");
       setType("DEBIT");
       // Keep accountId, categoryId, studentId as they might be frequently reused
     } catch (err: any) {
-      toast.error("Failed to add transaction: " + err.message);
+      toast.error("Gagal menambahkan transaksi: " + err.message);
     }
   };
 
@@ -184,133 +184,164 @@ export default function NewTransactionPage() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Record New Transaction</CardTitle>
-        <CardDescription>Enter details for a new financial transaction.</CardDescription>
+        <CardTitle>Catat Transaksi Baru</CardTitle>
+        <CardDescription>Masukkan detail untuk transaksi keuangan baru.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <form onSubmit={handleAddTransaction} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="date">Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+        <form onSubmit={handleAddTransaction} className="space-y-8">
+          {/* Transaction Details Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="date" className="flex items-center text-sm font-medium">
+                <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                Tanggal
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal h-10",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pilih tanggal</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description" className="flex items-center text-sm font-medium">
+                <FileTextIcon className="mr-2 h-4 w-4 text-green-500" />
+                Deskripsi
+              </Label>
+              <Input
+                id="description"
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                placeholder="Masukkan deskripsi transaksi"
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount" className="flex items-center text-sm font-medium">
+                <DollarSignIcon className="mr-2 h-4 w-4 text-yellow-500" />
+                Jumlah
+              </Label>
+              <Input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                step="0.01"
+                placeholder="0.00"
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type" className="flex items-center text-sm font-medium">
+                <TagIcon className="mr-2 h-4 w-4 text-purple-500" />
+                Jenis Transaksi
+              </Label>
+              <Select value={type} onValueChange={(value: "DEBIT" | "CREDIT") => setType(value)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Pilih jenis" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DEBIT">DEBIT (Pemasukan)</SelectItem>
+                  <SelectItem value="CREDIT">CREDIT (Pengeluaran)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
+          {/* Classification Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="categoryId" className="flex items-center text-sm font-medium">
+                <TagIcon className="mr-2 h-4 w-4 text-indigo-500" />
+                Kategori
+              </Label>
+              <Select value={categoryId} onValueChange={(value) => {
+                setCategoryId(value === "none" ? undefined : value);
+                setSelectedCategory(value === "none" ? null : categories.find(cat => cat.id === value) || null);
+              }}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Pilih kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Tidak Ada</SelectItem>
+                  {filteredCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="accountId" className="flex items-center text-sm font-medium">
+                <WalletIcon className="mr-2 h-4 w-4 text-teal-500" />
+                Akun Keuangan
+              </Label>
+              <Select value={accountId} onValueChange={setAccountId}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Pilih akun" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredFinancialAccounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="studentId" className="flex items-center text-sm font-medium">
+                <UserIcon className="mr-2 h-4 w-4 text-orange-500" />
+                Siswa {isStudentRequired ? "" : "(Opsional)"}
+              </Label>
+              <Select value={studentId} onValueChange={setStudentId} required={isStudentRequired}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Pilih siswa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Tidak Ada</SelectItem>
+                  {students.map((student) => (
+                    <SelectItem key={student.id} value={student.id}>
+                      {student.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="amount">Amount</Label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              step="0.01"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="type">Transaction Type</Label>
-            <Select value={type} onValueChange={(value: "DEBIT" | "CREDIT") => setType(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DEBIT">DEBIT (Income)</SelectItem>
-                <SelectItem value="CREDIT">CREDIT (Expense)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="categoryId">Category</Label>
-            <Select value={categoryId} onValueChange={(value) => {
-              setCategoryId(value === "none" ? undefined : value);
-              setSelectedCategory(value === "none" ? null : categories.find(cat => cat.id === value) || null);
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {filteredCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="accountId">Financial Account</Label>
-            <Select value={accountId} onValueChange={setAccountId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select account" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredFinancialAccounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="studentId">
-              Student {isStudentRequired ? "" : "(Optional)"}
-            </Label>
-            <Select value={studentId} onValueChange={setStudentId} required={isStudentRequired}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select student" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {students.map((student) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    {student.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="md:col-span-2">
-            <Button type="submit" className="w-full">
-              Record Transaction
+          {/* Submit Button */}
+          <div className="pt-4">
+            <Button type="submit" className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700">
+              <DollarSignIcon className="mr-2 h-5 w-5" />
+              Catat Transaksi
             </Button>
           </div>
         </form>
