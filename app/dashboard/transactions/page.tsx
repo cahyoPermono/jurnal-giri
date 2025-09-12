@@ -145,7 +145,7 @@ export default function ViewTransactionsPage() {
       <CardContent className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           <div className="grid gap-2">
             <Label htmlFor="startDate">Start Date</Label>
             <Popover>
@@ -264,8 +264,8 @@ export default function ViewTransactionsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border">
-          <Table>
+        <div className="rounded-md border overflow-x-auto">
+          <Table className="min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>

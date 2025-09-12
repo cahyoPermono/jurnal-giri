@@ -203,7 +203,7 @@ export default function ManageStudentsPage() {
           <h3 className="text-lg font-semibold mb-4">Tambah Siswa Baru</h3>
           <form
             onSubmit={handleAddStudent}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end"
           >
             <div className="grid gap-2">
               <Label htmlFor="newStudentName">Nama</Label>
@@ -266,7 +266,7 @@ export default function ManageStudentsPage() {
               </Popover>
             </div>
 
-            <Button type="submit" className="col-span-full md:col-span-1">
+            <Button type="submit" className="col-span-full sm:col-span-2 lg:col-span-1">
               Tambah Siswa
             </Button>
           </form>
@@ -277,8 +277,8 @@ export default function ManageStudentsPage() {
           {students.length === 0 ? (
             <p className="text-gray-500">Tidak ada siswa ditemukan.</p>
           ) : (
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nama</TableHead>
@@ -320,21 +320,22 @@ export default function ManageStudentsPage() {
                         {new Date(student.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mr-2"
-                          onClick={() => setEditingStudent(student)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setDeletingStudentId(student.id)}
-                        >
-                          Hapus
-                        </Button>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingStudent(student)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setDeletingStudentId(student.id)}
+                          >
+                            Hapus
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

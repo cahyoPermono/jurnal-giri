@@ -56,9 +56,18 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       <div className="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
-          <div>
+          <div className="lg:hidden mb-8">
             <Image
               className="mx-auto"
+              src="/logonobg.png"
+              alt="Jurnal Giri Logo"
+              width={96}
+              height={96}
+            />
+          </div>
+          <div>
+            <Image
+              className="mx-auto hidden lg:block"
               src="/logonobg.png"
               alt="Jurnal Giri Logo"
               width={128}

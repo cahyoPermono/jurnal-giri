@@ -127,4 +127,32 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 640px) {
+    .mobile-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-text {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    .mobile-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  /* Ensure tables are mobile-friendly */
+  @media (max-width: 768px) {
+    table {
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      padding: 0.5rem;
+    }
+  }
 }

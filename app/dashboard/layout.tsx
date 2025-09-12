@@ -22,7 +22,9 @@ import {
   UserCog,
   Shield,
   LogOut,
-  User
+  User,
+  Menu,
+  X
 } from "lucide-react";
 import type { Session } from "next-auth";
 
@@ -38,6 +40,7 @@ export default function DashboardLayout({
   const [isMainOpen, setIsMainOpen] = useState(true);
   const [isReportsOpen, setIsReportsOpen] = useState(true);
   const [isAdminToolsOpen, setIsAdminToolsOpen] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return; // Do nothing while loading
@@ -62,49 +65,85 @@ export default function DashboardLayout({
         : "text-sidebar-foreground"
     }`;
 
+  const handleNavClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <aside className="w-64 bg-white shadow-md p-4 flex flex-col justify-between">
-        <div>
-          <img src="/logonobg.png" alt="Giri Financials Logo" className="w-32 h-auto mx-auto mb-6" />
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white shadow-md px-4 py-3 flex items-center justify-between">
+        <img src="/logonobg.png" alt="Giri Financials Logo" className="h-8 w-auto" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2"
+        >
+          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </Button>
+      </div>
 
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-md p-4 flex flex-col justify-between
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:shadow-none
+      `}>
+        {/* Desktop Logo */}
+        <div className="hidden lg:block">
+          <img src="/logonobg.png" alt="Giri Financials Logo" className="w-32 h-auto mx-auto mb-6" />
+        </div>
+
+        {/* Mobile Logo */}
+        <div className="lg:hidden border-b border-sidebar-border pb-4 mb-4">
+          <img src="/logonobg.png" alt="Giri Financials Logo" className="w-24 h-auto mx-auto" />
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
           <Collapsible open={isMainOpen} onOpenChange={setIsMainOpen} className="mb-2">
             <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-3 text-lg font-semibold text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors">
               Navigasi Utama
               <ChevronDown className={`h-5 w-5 transition-transform ${isMainOpen ? "rotate-180" : "rotate-0"}`} />
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-2">
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard")} onClick={handleNavClick}>
                 <Link href="/dashboard">
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/students")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/students")} onClick={handleNavClick}>
                 <Link href="/dashboard/students">
                   <Users className="h-4 w-4" />
                   Kelola Siswa
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/categories")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/categories")} onClick={handleNavClick}>
                 <Link href="/dashboard/categories">
                   <Tag className="h-4 w-4" />
                   Kelola Kategori
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/transactions/new")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/transactions/new")} onClick={handleNavClick}>
                 <Link href="/dashboard/transactions/new">
                   <PlusCircle className="h-4 w-4" />
                   Catat Transaksi Baru
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/transactions")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/transactions")} onClick={handleNavClick}>
                 <Link href="/dashboard/transactions">
                   <List className="h-4 w-4" />
                   Lihat Transaksi
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/transactions/transfer")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/transactions/transfer")} onClick={handleNavClick}>
                 <Link href="/dashboard/transactions/transfer">
                   <ArrowRightLeft className="h-4 w-4" />
                   Transfer Dana
@@ -119,31 +158,31 @@ export default function DashboardLayout({
               <ChevronDown className={`h-5 w-5 transition-transform ${isReportsOpen ? "rotate-180" : "rotate-0"}`} />
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-2">
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/general-journal")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/general-journal")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/general-journal">
                   <FileText className="h-4 w-4" />
                   Jurnal Umum
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/profit-loss")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/profit-loss")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/profit-loss">
                   <TrendingUp className="h-4 w-4" />
                   Laba Rugi
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/cash-flow")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/cash-flow")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/cash-flow">
                   <DollarSign className="h-4 w-4" />
                   Arus Kas
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/rekap-semester")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/rekap-semester")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/rekap-semester">
                   <Calendar className="h-4 w-4" />
                   Rekap Semester
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/student-liabilities")}>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/student-liabilities")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/student-liabilities">
                   <CreditCard className="h-4 w-4" />
                   Hutang Siswa
@@ -159,13 +198,13 @@ export default function DashboardLayout({
                 <ChevronDown className={`h-5 w-5 transition-transform ${isAdminToolsOpen ? "rotate-180" : "rotate-0"}`} />
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-2">
-                <Button asChild variant="ghost" className={navLinkClass("/dashboard/admin/users")}>
+                <Button asChild variant="ghost" className={navLinkClass("/dashboard/admin/users")} onClick={handleNavClick}>
                   <Link href="/dashboard/admin/users">
                     <UserCog className="h-4 w-4" />
                     Kelola Operator
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" className={navLinkClass("/dashboard/admin/audit-logs")}>
+                <Button asChild variant="ghost" className={navLinkClass("/dashboard/admin/audit-logs")} onClick={handleNavClick}>
                   <Link href="/dashboard/admin/audit-logs">
                     <Shield className="h-4 w-4" />
                     Log Audit
@@ -202,7 +241,9 @@ export default function DashboardLayout({
           </Button>
         </div>
       </aside>
-      <main className="flex-grow p-6 overflow-auto">
+
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-0 pt-16 lg:pt-0 p-4 lg:p-6 overflow-auto">
         {children}
       </main>
     </div>

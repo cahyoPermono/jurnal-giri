@@ -176,7 +176,7 @@ export default function ManageCategoriesPage() {
       <CardContent className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
-          <form onSubmit={handleAddCategory} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <form onSubmit={handleAddCategory} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div className="grid gap-2">
               <Label htmlFor="newCategoryName">Name</Label>
               <Input
@@ -218,7 +218,7 @@ export default function ManageCategoriesPage() {
                   </SelectContent>
                 </Select>
             </div>
-            <Button type="submit" className="col-span-full md:col-span-1">
+            <Button type="submit" className="col-span-full sm:col-span-2 md:col-span-1">
               Add Category
             </Button>
           </form>
@@ -229,8 +229,8 @@ export default function ManageCategoriesPage() {
           {categories.length === 0 ? (
             <p className="text-gray-500">No categories found.</p>
           ) : (
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
@@ -248,28 +248,30 @@ export default function ManageCategoriesPage() {
                       <TableCell>{category.financialAccount?.name || "N/A"}</TableCell>
                       <TableCell>{new Date(category.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" className="mr-2" onClick={() => setEditingCategory(category)}>
-                          Edit
-                        </Button>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              Delete
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Are you absolutely sure?</DialogTitle>
-                              <DialogDescription>
-                                This action cannot be undone. This will permanently delete the category record.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                              <Button variant="outline" onClick={() => { /* Close dialog */ }}>Cancel</Button>
-                              <Button variant="destructive" onClick={() => handleDeleteCategory(category.id)}>Delete</Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                          <Button variant="outline" size="sm" onClick={() => setEditingCategory(category)}>
+                            Edit
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="destructive" size="sm">
+                                Delete
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Are you absolutely sure?</DialogTitle>
+                                <DialogDescription>
+                                  This action cannot be undone. This will permanently delete the category record.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => { /* Close dialog */ }}>Cancel</Button>
+                                <Button variant="destructive" onClick={() => handleDeleteCategory(category.id)}>Delete</Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
