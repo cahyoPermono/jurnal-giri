@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -45,8 +45,8 @@ export async function GET(request: Request) {
       },
     });
 
-    const totalCashIn = cashInTransactions._sum.amount || 0;
-    const totalCashOut = cashOutTransactions._sum.amount || 0;
+    const totalCashIn = cashInTransactions._sum.amount?.toNumber() || 0;
+    const totalCashOut = cashOutTransactions._sum.amount?.toNumber() || 0;
     const netCashFlow = totalCashIn - totalCashOut;
 
     return NextResponse.json({
