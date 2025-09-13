@@ -51,6 +51,7 @@ export default function LaporanKeuanganBulananReportPage() {
   const [reportData, setReportData] = useState<LaporanKeuanganBulananReport | null>(null);
   const [month, setMonth] = useState<string>("");
   const [year, setYear] = useState<string>("");
+  const [grouping, setGrouping] = useState<string>("category");
 
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +73,7 @@ export default function LaporanKeuanganBulananReportPage() {
     const params = new URLSearchParams();
     params.append("month", month);
     params.append("year", year);
+    params.append("grouping", grouping);
 
     try {
       const res = await fetch(`/api/reports/laporan-keuangan-bulanan?${params.toString()}`);
@@ -104,7 +106,7 @@ export default function LaporanKeuanganBulananReportPage() {
       <CardContent id="laporan-keuangan-bulanan-report" className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="grid gap-2">
             <Label htmlFor="month">Bulan</Label>
             <Select value={month} onValueChange={setMonth}>
@@ -129,6 +131,19 @@ export default function LaporanKeuanganBulananReportPage() {
               value={year}
               onChange={(e) => setYear(e.target.value)}
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="grouping">Pengelompokan</Label>
+            <Select value={grouping} onValueChange={setGrouping}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih pengelompokan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="category">Berdasarkan Kategori</SelectItem>
+                <SelectItem value="account">Berdasarkan Akun Kas</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

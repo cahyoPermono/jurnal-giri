@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get("month");
     const year = searchParams.get("year");
+    const grouping = searchParams.get("grouping") || "category";
 
     if (!month || !year) {
       return new NextResponse("Month and year are required", { status: 400 });
@@ -25,6 +26,10 @@ export async function GET(request: Request) {
 
     if (m < 1 || m > 12) {
       return new NextResponse("Invalid month", { status: 400 });
+    }
+
+    if (grouping !== "category" && grouping !== "account") {
+      return new NextResponse("Invalid grouping parameter", { status: 400 });
     }
 
     const startDate = new Date(y, m - 1, 1);
@@ -55,41 +60,94 @@ export async function GET(request: Request) {
     });
     const saldoAwal = (debitResult._sum.amount?.toNumber() || 0) - (creditResult._sum.amount?.toNumber() || 0);
 
-    // Fetch debit transactions grouped by category
-    const debitTransactions = await prisma.transaction.groupBy({
-      by: ['categoryName'],
-      _sum: {
-        amount: true,
-      },
-      where: {
-        type: TransactionType.DEBIT,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: {
-        categoryName: 'asc',
-      },
-    });
+    let debitTransactions: any[];
+    let creditTransactions: any[];
 
-    // Fetch credit transactions grouped by category
-    const creditTransactions = await prisma.transaction.groupBy({
-      by: ['categoryName'],
-      _sum: {
-        amount: true,
-      },
-      where: {
-        type: TransactionType.CREDIT,
-        date: {
-          gte: startDate,
-          lte: endDate,
+    if (grouping === "category") {
+      // Fetch debit transactions grouped by category
+      debitTransactions = await (prisma.transaction.groupBy as any)({
+        by: ['categoryName'],
+        _sum: {
+          amount: true,
         },
-      },
-      orderBy: {
-        categoryName: 'asc',
-      },
-    });
+        where: {
+          type: TransactionType.DEBIT,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+          categoryName: {
+            not: null,
+          },
+        },
+        orderBy: {
+          categoryName: 'asc',
+        },
+      });
+
+      // Fetch credit transactions grouped by category
+      creditTransactions = await (prisma.transaction.groupBy as any)({
+        by: ['categoryName'],
+        _sum: {
+          amount: true,
+        },
+        where: {
+          type: TransactionType.CREDIT,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+          categoryName: {
+            not: null,
+          },
+        },
+        orderBy: {
+          categoryName: 'asc',
+        },
+      });
+    } else {
+      // Fetch debit transactions grouped by account
+      debitTransactions = await (prisma.transaction.groupBy as any)({
+        by: ['accountName'],
+        _sum: {
+          amount: true,
+        },
+        where: {
+          type: TransactionType.DEBIT,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+          accountName: {
+            not: null,
+          },
+        },
+        orderBy: {
+          accountName: 'asc',
+        },
+      });
+
+      // Fetch credit transactions grouped by account
+      creditTransactions = await (prisma.transaction.groupBy as any)({
+        by: ['accountName'],
+        _sum: {
+          amount: true,
+        },
+        where: {
+          type: TransactionType.CREDIT,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+          accountName: {
+            not: null,
+          },
+        },
+        orderBy: {
+          accountName: 'asc',
+        },
+      });
+    }
 
     // Calculate totals
     const totalPenerimaan = debitTransactions.reduce((sum, item) => sum + (item._sum.amount?.toNumber() || 0), 0);
@@ -114,17 +172,26 @@ export async function GET(request: Request) {
       const debit = debitTransactions[i];
       const credit = creditTransactions[i];
 
-      const debitCategory = debit ? (debit.categoryName || "Tanpa Kategori") : "";
+      let debitName = "";
+      let creditName = "";
+
+      if (grouping === "category") {
+        debitName = debit ? (debit.categoryName || "Tanpa Kategori") : "";
+        creditName = credit ? (credit.categoryName || "Tanpa Kategori") : "";
+      } else {
+        debitName = debit ? (debit.accountName || "Tanpa Akun") : "";
+        creditName = credit ? (credit.accountName || "Tanpa Akun") : "";
+      }
+
       const debitAmount = debit ? (debit._sum.amount?.toNumber() || 0) : "";
-      const creditCategory = credit ? (credit.categoryName || "Tanpa Kategori") : "";
       const creditAmount = credit ? (credit._sum.amount?.toNumber() || 0) : "";
 
       report.push({
         no1: debit ? i + 1 : "",
-        penerimaan: debitCategory,
+        penerimaan: debitName,
         totalPenerimaan: debitAmount,
         no2: credit ? i + 1 : "",
-        pengeluaran: creditCategory,
+        pengeluaran: creditName,
         totalPengeluaran: creditAmount,
       });
     }
