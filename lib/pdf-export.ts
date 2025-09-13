@@ -108,16 +108,30 @@ export async function exportToPdf(elementId: string, filename: string) {
       yPosition += 15;
     } else if (elementId === 'transactions-table') {
       // Custom header for transactions table
-      pdf.setFontSize(18);
+      pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Transaction Report', margin, yPosition);
-      yPosition += 15;
+      pdf.text('LAPORAN TRANSAKSI', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
 
-      // Add current date
       pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, margin, yPosition);
-      yPosition += 10;
+      pdf.text('KB SUNAN GIRI', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
+
+      // Extract date range
+      const dateRangeElement = input.querySelector('#date-range');
+      let dateRangeText = '';
+      if (dateRangeElement) {
+        dateRangeText = dateRangeElement.textContent || '';
+        const match = dateRangeText.match(/Tanggal: (.+)/);
+        if (match) dateRangeText = match[1];
+      }
+
+      if (dateRangeText) {
+        pdf.text(dateRangeText, pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 8;
+      }
+
+      yPosition += 7;
     } else {
       // Default header for other reports
       const titleElement = input.querySelector('h2') || input.querySelector('h1');
@@ -143,14 +157,14 @@ export async function exportToPdf(elementId: string, filename: string) {
     }
 
     // Extract table headers
-    const headers: string[] = [];
+    let headers: string[] = [];
     const headerCells = table.querySelectorAll('thead th, thead td');
     headerCells.forEach(cell => {
       headers.push(cell.textContent?.trim() || '');
     });
 
     // Extract table rows
-    const rows: string[][] = [];
+    let rows: string[][] = [];
     const bodyRows = table.querySelectorAll('tbody tr');
     bodyRows.forEach(row => {
       const rowData: string[] = [];
@@ -160,6 +174,12 @@ export async function exportToPdf(elementId: string, filename: string) {
       });
       rows.push(rowData);
     });
+
+    // For transactions table, exclude the "Recorded By" column (last column)
+    if (elementId === 'transactions-table') {
+      headers = headers.slice(0, -1); // Remove last header
+      rows = rows.map(row => row.slice(0, -1)); // Remove last column from each row
+    }
 
     // Calculate column widths - custom widths for different reports
     let columnWidths: number[] = [];
@@ -190,8 +210,8 @@ export async function exportToPdf(elementId: string, filename: string) {
       columnWidths = new Array(headers.length).fill(columnWidth);
     }
 
-    if (isRekapSemester || isRekapPenerimaanBulan || isLaporanKeuanganBulanan) {
-      // Draw table with full borders for rekap reports
+    if (isRekapSemester || isRekapPenerimaanBulan || isLaporanKeuanganBulanan || elementId === 'transactions-table') {
+      // Draw table with full borders for rekap reports and transactions
       const tableStartY = yPosition;
       const rowHeight = 10;
       const tableWidth = pageWidth - 2 * margin;
@@ -226,8 +246,8 @@ export async function exportToPdf(elementId: string, filename: string) {
         const currentY = yPosition;
         let maxRowHeight = rowHeight;
 
-        // Pre-calculate max row height if it's the rekap-penerimaan-bulan report
-        if (isRekapPenerimaanBulan) {
+        // Pre-calculate max row height for text wrapping
+        if (isRekapPenerimaanBulan && row[2]) {
           const uraianCellText = row[2] || '';
           const uraianCellWidth = columnWidths[2] - 4; // account for padding
           const lines = pdf.splitTextToSize(uraianCellText, uraianCellWidth);
@@ -236,6 +256,20 @@ export async function exportToPdf(elementId: string, filename: string) {
           if (requiredHeight > maxRowHeight) {
             maxRowHeight = requiredHeight;
           }
+        } else if (elementId === 'transactions-table') {
+          // Check columns that might have long text for text wrapping: description (1), account (4), category (5), student (6)
+          [1, 4, 5, 6].forEach(colIndex => {
+            if (row[colIndex]) {
+              const cellText = row[colIndex];
+              const cellWidth = columnWidths[colIndex] - 4;
+              const lines = pdf.splitTextToSize(cellText, cellWidth);
+              const textHeight = lines.length * 5;
+              const requiredHeight = textHeight + 8;
+              if (requiredHeight > maxRowHeight) {
+                maxRowHeight = requiredHeight;
+              }
+            }
+          });
         }
 
         // Draw the rectangle for the entire row
@@ -245,8 +279,11 @@ export async function exportToPdf(elementId: string, filename: string) {
           const x = margin + columnWidths.slice(0, cellIndex).reduce((sum, width) => sum + width, 0);
           const cellWidth = columnWidths[cellIndex] - 4;
 
-          // Draw cell content
+          // Draw cell content with text wrapping
           if (isRekapPenerimaanBulan && cellIndex === 2) {
+            const lines = pdf.splitTextToSize(cell, cellWidth);
+            pdf.text(lines, x + 2, currentY + 3);
+          } else if (elementId === 'transactions-table' && [1, 4, 5, 6].includes(cellIndex)) {
             const lines = pdf.splitTextToSize(cell, cellWidth);
             pdf.text(lines, x + 2, currentY + 3);
           } else {

@@ -273,6 +273,9 @@ export default function ViewTransactionsPage() {
         </div>
 
         <div id="transactions-table" className="rounded-md border overflow-x-auto">
+          <div style={{ display: 'none' }}>
+            <p id="date-range">Tanggal: {startDate ? format(startDate, "dd/MM/yyyy") : ''} ke {endDate ? format(endDate, "dd/MM/yyyy") : ''}</p>
+          </div>
           <Table className="min-w-full">
             <TableHeader>
               <TableRow>
