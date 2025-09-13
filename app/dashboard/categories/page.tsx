@@ -59,7 +59,7 @@ export default function ManageCategoriesPage() {
       const data = await res.json();
       setFinancialAccounts(data);
     } catch (err: any) {
-      toast.error("Failed to fetch financial accounts: " + err.message);
+      toast.error("Gagal mengambil akun keuangan: " + err.message);
     }
   };
 
@@ -72,7 +72,7 @@ export default function ManageCategoriesPage() {
       const data = await res.json();
       setCategories(data);
     } catch (err: any) {
-      toast.error("Failed to fetch categories: " + err.message);
+      toast.error("Gagal mengambil kategori: " + err.message);
     }
   };
 
@@ -81,15 +81,15 @@ export default function ManageCategoriesPage() {
 
     // Validation for required fields
     if (!newCategoryName.trim()) {
-      toast.error("Category name is required");
+      toast.error("Nama kategori diperlukan");
       return;
     }
     if (!newCategoryType) {
-      toast.error("Category type is required");
+      toast.error("Tipe kategori diperlukan");
       return;
     }
     if (!newCategoryFinancialAccountId) {
-      toast.error("Financial account is required");
+      toast.error("Akun keuangan diperlukan");
       return;
     }
 
@@ -107,13 +107,13 @@ export default function ManageCategoriesPage() {
         throw new Error(errorData.message || "Failed to add category");
       }
 
-      toast.success("Category added successfully!");
+      toast.success("Kategori berhasil ditambahkan!");
       setNewCategoryName("");
       setNewCategoryType("DEBIT"); // Reset to default
       setNewCategoryFinancialAccountId(null); // Reset financial account
       fetchCategories(); // Refresh the list
     } catch (err: any) {
-      toast.error("Failed to add category: " + err.message);
+      toast.error("Gagal menambah kategori: " + err.message);
     }
   };
 
@@ -136,11 +136,11 @@ export default function ManageCategoriesPage() {
         throw new Error(errorData.message || "Failed to update category");
       }
 
-      toast.success("Category updated successfully!");
+      toast.success("Kategori berhasil diperbarui!");
       setEditingCategory(null);
       fetchCategories(); // Refresh the list
     } catch (err: any) {
-      toast.error("Failed to update category: " + err.message);
+      toast.error("Gagal memperbarui kategori: " + err.message);
     }
   };
 
@@ -156,10 +156,10 @@ export default function ManageCategoriesPage() {
         throw new Error(errorData.message || "Failed to delete category");
       }
 
-      toast.success("Category deleted successfully!");
+      toast.success("Kategori berhasil dihapus!");
       fetchCategories(); // Refresh the list
     } catch (err: any) {
-      toast.error("Failed to delete category: " + err.message);
+      toast.error("Gagal menghapus kategori: " + err.message);
     }
   };
 
@@ -170,15 +170,15 @@ export default function ManageCategoriesPage() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Manage Categories</CardTitle>
-        <CardDescription>Add, edit, or delete transaction categories.</CardDescription>
+        <CardTitle>Kelola Kategori</CardTitle>
+        <CardDescription>Tambah, edit, atau hapus kategori transaksi.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
+          <h3 className="text-lg font-semibold mb-4">Tambah Kategori Baru</h3>
           <form onSubmit={handleAddCategory} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div className="grid gap-2">
-              <Label htmlFor="newCategoryName">Name</Label>
+              <Label htmlFor="newCategoryName">Nama</Label>
               <Input
                 id="newCategoryName"
                 type="text"
@@ -188,26 +188,26 @@ export default function ManageCategoriesPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newCategoryType">Type</Label>
+              <Label htmlFor="newCategoryType">Tipe</Label>
               <Select value={newCategoryType} onValueChange={(value: "DEBIT" | "CREDIT" | "TRANSFER") => setNewCategoryType(value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a type" />
+                  <SelectValue placeholder="Pilih tipe" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DEBIT">DEBIT (Income)</SelectItem>
-                  <SelectItem value="CREDIT">CREDIT (Expense)</SelectItem>
+                  <SelectItem value="DEBIT">DEBIT (Pemasukan)</SelectItem>
+                  <SelectItem value="CREDIT">CREDIT (Pengeluaran)</SelectItem>
                   {/* <SelectItem value="TRANSFER">TRANSFER</SelectItem> */}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="newCategoryFinancialAccount">Financial Account</Label>
+              <Label htmlFor="newCategoryFinancialAccount">Akun Keuangan</Label>
               <Select
                   value={newCategoryFinancialAccountId || ""}
                   onValueChange={(value) => setNewCategoryFinancialAccountId(value || null)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an account" />
+                    <SelectValue placeholder="Pilih akun" />
                   </SelectTrigger>
                   <SelectContent>
                     {financialAccounts.map((account) => (
@@ -219,25 +219,25 @@ export default function ManageCategoriesPage() {
                 </Select>
             </div>
             <Button type="submit" className="col-span-full sm:col-span-2 md:col-span-1">
-              Add Category
+              Tambah Kategori
             </Button>
           </form>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Existing Categories</h3>
+          <h3 className="text-lg font-semibold mb-4">Kategori yang Ada</h3>
           {categories.length === 0 ? (
-            <p className="text-gray-500">No categories found.</p>
+            <p className="text-gray-500">Tidak ada kategori ditemukan.</p>
           ) : (
             <div className="rounded-md border overflow-x-auto">
               <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Financial Account</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>Tipe</TableHead>
+                    <TableHead>Akun Keuangan</TableHead>
+                    <TableHead>Dibuat Pada</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -255,19 +255,19 @@ export default function ManageCategoriesPage() {
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="destructive" size="sm">
-                                Delete
+                                Hapus
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Are you absolutely sure?</DialogTitle>
+                                <DialogTitle>Apakah Anda yakin?</DialogTitle>
                                 <DialogDescription>
-                                  This action cannot be undone. This will permanently delete the category record.
+                                  Tindakan ini tidak dapat dibatalkan. Ini akan menghapus catatan kategori secara permanen.
                                 </DialogDescription>
                               </DialogHeader>
                               <DialogFooter>
-                                <Button variant="outline" onClick={() => { /* Close dialog */ }}>Cancel</Button>
-                                <Button variant="destructive" onClick={() => handleDeleteCategory(category.id)}>Delete</Button>
+                                <Button variant="outline" onClick={() => { /* Close dialog */ }}>Batal</Button>
+                                <Button variant="destructive" onClick={() => handleDeleteCategory(category.id)}>Hapus</Button>
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
@@ -285,12 +285,12 @@ export default function ManageCategoriesPage() {
           <Dialog open={!!editingCategory} onOpenChange={() => setEditingCategory(null)}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Edit Category</DialogTitle>
-                <DialogDescription>Make changes to the category record here.</DialogDescription>
+                <DialogTitle>Edit Kategori</DialogTitle>
+                <DialogDescription>Buat perubahan pada catatan kategori di sini.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleUpdateCategory} className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="editName">Name</Label>
+                  <Label htmlFor="editName">Nama</Label>
                   <Input
                     id="editName"
                     value={editingCategory.name}
@@ -298,26 +298,26 @@ export default function ManageCategoriesPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editType">Type</Label>
+                  <Label htmlFor="editType">Tipe</Label>
                   <Select value={editingCategory.type} onValueChange={(value: "DEBIT" | "CREDIT" | "TRANSFER") => setEditingCategory({ ...editingCategory, type: value })}>
                     <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select a type" />
+                      <SelectValue placeholder="Pilih tipe" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DEBIT">DEBIT (Income)</SelectItem>
-                      <SelectItem value="CREDIT">CREDIT (Expense)</SelectItem>
+                      <SelectItem value="DEBIT">DEBIT (Pemasukan)</SelectItem>
+                      <SelectItem value="CREDIT">CREDIT (Pengeluaran)</SelectItem>
                       {/* <SelectItem value="TRANSFER">TRANSFER</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="editFinancialAccount">Financial Account (Optional)</Label>
+                  <Label htmlFor="editFinancialAccount">Akun Keuangan (Opsional)</Label>
                   <Select
                     value={editingCategory.financialAccountId || ""}
                     onValueChange={(value) => setEditingCategory({ ...editingCategory, financialAccountId: value || null })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an account" />
+                      <SelectValue placeholder="Pilih akun" />
                     </SelectTrigger>
                     <SelectContent>
                       {financialAccounts.map((account) => (
@@ -329,8 +329,8 @@ export default function ManageCategoriesPage() {
                   </Select>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setEditingCategory(null)}>Cancel</Button>
-                  <Button type="submit">Save changes</Button>
+                  <Button variant="outline" onClick={() => setEditingCategory(null)}>Batal</Button>
+                  <Button type="submit">Simpan Perubahan</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
