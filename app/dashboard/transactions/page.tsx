@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, DownloadIcon } from "lucide-react";
+import { CalendarIcon, DownloadIcon, EyeIcon } from "lucide-react";
 import { toast } from "sonner";
 import { exportToPdf } from "@/lib/pdf-export";
 
@@ -32,6 +32,7 @@ interface Transaction {
   categoryName?: string;
   studentName?: string;
   userName?: string;
+  proofFile?: string;
 }
 
 interface FinancialAccount {
@@ -292,12 +293,13 @@ export default function ViewTransactionsPage() {
                 <TableHead>Kategori</TableHead>
                 <TableHead>Siswa</TableHead>
                 <TableHead>Dicatat Oleh</TableHead>
+                <TableHead>Bukti</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
+                  <TableCell colSpan={9} className="h-24 text-center">
                     Tidak ada transaksi ditemukan.
                   </TableCell>
                 </TableRow>
@@ -312,6 +314,20 @@ export default function ViewTransactionsPage() {
                     <TableCell>{transaction.categoryName || transaction.category?.name || "-"}</TableCell>
                     <TableCell>{transaction.studentName || transaction.student?.name || "-"}</TableCell>
                     <TableCell>{transaction.userName || transaction.user?.name || "-"}</TableCell>
+                    <TableCell>
+                      {transaction.proofFile ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(transaction.proofFile, '_blank')}
+                        >
+                          <EyeIcon className="h-4 w-4 mr-1" />
+                          Lihat
+                        </Button>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
