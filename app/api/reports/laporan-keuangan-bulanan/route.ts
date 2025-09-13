@@ -76,9 +76,6 @@ export async function GET(request: Request) {
             gte: startDate,
             lte: endDate,
           },
-          categoryName: {
-            not: null,
-          },
         },
         orderBy: {
           categoryName: 'asc',
@@ -96,9 +93,6 @@ export async function GET(request: Request) {
           date: {
             gte: startDate,
             lte: endDate,
-          },
-          categoryName: {
-            not: null,
           },
         },
         orderBy: {
