@@ -400,15 +400,46 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
       pdf.setFontSize(10);
       pdf.text(`Jember, ${formattedDate}`, pageWidth - margin - 60, yPosition);
 
-      // Align titles at the same level
-      const titleY = yPosition + 8;
-      pdf.text('Pengelola KB', margin, titleY);
-      pdf.text('Bendahara', pageWidth - margin - 60, titleY);
+      if (isRekapSemester) {
+        // Special signature layout for rekap semester with additional signatures
+        // Mengatahui aligned with the date on the left
+        pdf.text('Mengatahui,', margin, yPosition);
 
-      // Place both signatures at the same level
-      const signatureY = titleY + 20;
-      pdf.text('(Zulfa Mazidah, S.Pd.I)', margin, signatureY);
-      pdf.text('(Wiwin Fauziyah, S.sos)', pageWidth - margin - 60, signatureY);
+        // First row: Pengelola KB and Bendahara
+        const firstTitleY = yPosition + 5;
+        pdf.text('Pengelola KB', margin, firstTitleY);
+        pdf.text('Bendahara', pageWidth - margin - 60, firstTitleY);
+
+        // First row signatures
+        const firstSignatureY = firstTitleY + 20;
+        pdf.text('(Zulfa Mazidah, S.Pd.I)', margin, firstSignatureY);
+        pdf.text('(Wiwin Fauziyah, S.sos)', pageWidth - margin - 60, firstSignatureY);
+
+        // Second row: Menyetujui (center)
+        const secondTitleY = firstSignatureY + 15;
+        pdf.text('Menyetujui,', pageWidth / 2, secondTitleY, { align: 'center' });
+
+        // Third row: Ketua yayasan (left) and Komite (right)
+        const thirdTitleY = secondTitleY + 15;
+        pdf.text('Ketua yayasan', margin, thirdTitleY);
+        pdf.text('Komite', pageWidth - margin - 60, thirdTitleY);
+
+        // Third row signatures
+        const thirdSignatureY = thirdTitleY + 20;
+        pdf.text('(Hj. Aminah As\'adi, S.pd)', margin, thirdSignatureY);
+        pdf.text('(H. Sutrisno Abdurrahman)', pageWidth - margin - 60, thirdSignatureY);
+      } else {
+        // Standard signature layout for other reports
+        // Align titles at the same level
+        const titleY = yPosition + 8;
+        pdf.text('Pengelola KB', margin, titleY);
+        pdf.text('Bendahara', pageWidth - margin - 60, titleY);
+
+        // Place both signatures at the same level
+        const signatureY = titleY + 20;
+        pdf.text('(Zulfa Mazidah, S.Pd.I)', margin, signatureY);
+        pdf.text('(Wiwin Fauziyah, S.sos)', pageWidth - margin - 60, signatureY);
+      }
 
     } else {
       // Default table rendering for other reports
