@@ -12,26 +12,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-
-    const where: any = {};
-
-    if (startDate) {
-      where.date = { ...where.date, gte: new Date(startDate) };
-    }
-    if (endDate) {
-      where.date = { ...where.date, lte: new Date(endDate) };
-    }
-
     const students = await prisma.student.findMany({
+      where: {
+        active: true,
+        enrollmentDate: { not: null },
+      },
       include: {
         transactions: {
           where: {
-            ...where,
-            // Only consider DEBIT and CREDIT for liabilities calculation
-            type: { in: [TransactionType.DEBIT, TransactionType.CREDIT] },
+            type: TransactionType.DEBIT,
+          },
+          include: {
+            account: true,
           },
           orderBy: { date: "asc" },
         },
@@ -39,26 +31,47 @@ export async function GET(request: Request) {
       orderBy: { name: "asc" },
     });
 
+    const REGISTRATION_FEE = 100000; // Fixed registration fee
+    const MONTHLY_SPP_FEE = 50000; // Monthly SPP fee
+
     const reportData = students.map(student => {
-      let totalDebit = 0;
-      let totalCredit = 0;
+      const enrollmentDate = student.enrollmentDate!;
+      const now = new Date();
+      const enrollmentYear = enrollmentDate.getFullYear();
+      const enrollmentMonth = enrollmentDate.getMonth();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
 
-      student.transactions.forEach(transaction => {
-        if (transaction.type === TransactionType.DEBIT) {
-          totalDebit += transaction.amount.toNumber();
-        } else if (transaction.type === TransactionType.CREDIT) {
-          totalCredit += transaction.amount.toNumber();
+      // Calculate months since enrollment
+      const monthsSinceEnrollment = (currentYear - enrollmentYear) * 12 + (currentMonth - enrollmentMonth) + 1;
+
+      const unpaidItems: { type: string; month?: string; amount: number }[] = [];
+
+      // Check registration payment
+      const registrationPaid = student.transactions.some(tx => tx.account.name === 'Pendaftaran');
+      if (!registrationPaid) {
+        unpaidItems.push({ type: 'Registration', amount: REGISTRATION_FEE });
+      }
+
+      // Check monthly SPP payments
+      for (let i = 0; i < monthsSinceEnrollment; i++) {
+        const paymentDate = new Date(enrollmentYear, enrollmentMonth + i, 1);
+        const monthName = paymentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const sppPaid = student.transactions.some(tx =>
+          tx.account.name === 'SPP' &&
+          tx.date.getMonth() === paymentDate.getMonth() &&
+          tx.date.getFullYear() === paymentDate.getFullYear()
+        );
+        if (!sppPaid) {
+          unpaidItems.push({ type: 'SPP', month: monthName, amount: MONTHLY_SPP_FEE });
         }
-      });
-
-      // Liability = Total Credit (payments due from student) - Total Debit (payments received from student)
-      const liability = totalCredit - totalDebit;
+      }
 
       return {
         id: student.id,
         name: student.name,
         nis: student.nis,
-        liability: liability,
+        unpaidItems: unpaidItems,
         transactions: student.transactions.map(t => ({
           id: t.id,
           date: t.date,
@@ -67,7 +80,7 @@ export async function GET(request: Request) {
           type: t.type,
         })),
       };
-    });
+    }).filter(student => student.unpaidItems.length > 0);
 
     return NextResponse.json(reportData);
   } catch (error) {
