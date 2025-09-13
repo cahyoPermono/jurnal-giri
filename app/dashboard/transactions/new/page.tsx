@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, FileTextIcon, DollarSignIcon, TagIcon, WalletIcon, UserIcon } from "lucide-react";
+import { CalendarIcon, FileTextIcon, CoinsIcon, TagIcon, WalletIcon, UserIcon } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -240,7 +240,7 @@ export default function NewTransactionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="amount" className="flex items-center text-sm font-medium">
-                <DollarSignIcon className="mr-2 h-4 w-4 text-chart-2" />
+                <CoinsIcon className="mr-2 h-4 w-4 text-chart-2" />
                 Jumlah
               </Label>
               <Input
@@ -250,7 +250,7 @@ export default function NewTransactionPage() {
                 onChange={(e) => setAmount(e.target.value)}
                 required
                 step="0.01"
-                placeholder="0.00"
+                placeholder="0"
                 className="h-10"
               />
             </div>
@@ -340,7 +340,7 @@ export default function NewTransactionPage() {
           {/* Submit Button */}
           <div className="pt-4">
             <Button type="submit" className="w-full h-12 text-lg font-semibold">
-              <DollarSignIcon className="mr-2 h-5 w-5" />
+              <CoinsIcon className="mr-2 h-5 w-5" />
               Catat Transaksi
             </Button>
           </div>
