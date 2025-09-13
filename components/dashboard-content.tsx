@@ -49,11 +49,13 @@ export default function DashboardContent() {
   const { data: session } = useSession();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [unpaidStudents, setUnpaidStudents] = useState<Student[]>([]);
+  const [unpaidRegistrationStudents, setUnpaidRegistrationStudents] = useState<Student[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardSummary();
     fetchUnpaidStudents();
+    fetchUnpaidRegistrationStudents();
   }, []);
 
   const fetchDashboardSummary = async () => {
@@ -111,6 +113,47 @@ export default function DashboardContent() {
       setUnpaidStudents(unpaid);
     } catch (err: any) {
       console.error("Error fetching unpaid students:", err);
+    }
+  };
+
+  const fetchUnpaidRegistrationStudents = async () => {
+    try {
+      // Fetch students
+      const studentsRes = await fetch("/api/students");
+      if (!studentsRes.ok) throw new Error("Failed to fetch students");
+      const students = await studentsRes.json();
+
+      // Fetch financial accounts
+      const accRes = await fetch("/api/financial-accounts");
+      if (!accRes.ok) throw new Error("Failed to fetch financial accounts");
+      const accounts = await accRes.json();
+
+      const registrationAccount = accounts.find((a: any) =>
+        a.name.toLowerCase().includes("pendaftaran") ||
+        a.name.toLowerCase().includes("registration") ||
+        a.name.toLowerCase().includes("daftar")
+      );
+
+      if (!registrationAccount) {
+        setUnpaidRegistrationStudents([]);
+        return;
+      }
+
+      // Fetch all transactions with DEBIT type for registration account
+      const transRes = await fetch(
+        `/api/transactions?accountId=${registrationAccount.id}&type=DEBIT`
+      );
+      if (!transRes.ok) throw new Error("Failed to fetch transactions");
+      const transactions = await transRes.json();
+
+      const paidStudentIds = new Set(
+        transactions.filter((t: any) => t.studentId).map((t: any) => t.studentId)
+      );
+
+      const unpaid = students.filter((s: Student) => s.active && !paidStudentIds.has(s.id));
+      setUnpaidRegistrationStudents(unpaid);
+    } catch (err: any) {
+      console.error("Error fetching unpaid registration students:", err);
     }
   };
 
@@ -191,6 +234,60 @@ export default function DashboardContent() {
             <div className="mt-3 pt-2 border-t border-amber-200/50">
               <p className="text-xs text-amber-700 flex items-center gap-1">
                 <span className="text-amber-500">💡</span>
+                Kelola siswa di menu "Kelola Siswa"
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Unpaid Registration Students Alert */}
+      {unpaidRegistrationStudents.length > 0 && (
+        <Card className="border-red-300 bg-gradient-to-r from-red-50 to-pink-50 shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-red-100 rounded-full">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-red-900 text-base">Siswa Belum Bayar Uang Pendaftaran</CardTitle>
+                  <CardDescription className="text-red-700 text-sm">
+                    {unpaidRegistrationStudents.length} siswa perlu ditagih
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  {unpaidRegistrationStudents.length} siswa
+                </span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className={`space-y-1.5 ${unpaidRegistrationStudents.length > 3 ? 'max-h-48 overflow-y-auto' : ''}`}>
+              {unpaidRegistrationStudents.map((student) => (
+                <div key={student.id} className="flex items-center gap-3 p-2 bg-white/60 rounded-md border border-red-200/50 hover:bg-white/80 transition-colors">
+                  <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Users className="h-3 w-3 text-red-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 text-sm truncate">{student.name}</p>
+                    <p className="text-xs text-gray-600 truncate">
+                      NIS: {student.nis}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs text-gray-500">
+                      {student.contactNumber || "No contact"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-2 border-t border-red-200/50">
+              <p className="text-xs text-red-700 flex items-center gap-1">
+                <span className="text-red-500">💡</span>
                 Kelola siswa di menu "Kelola Siswa"
               </p>
             </div>
