@@ -25,6 +25,13 @@ export async function POST(request: Request) {
     const studentId = formData.get("studentId") as string;
     const proofFile = formData.get("proofFile") as File | null;
 
+    // Liability related fields
+    const isLiability = formData.get("isLiability") === "true";
+    const vendorName = formData.get("vendorName") as string;
+    const dueDate = formData.get("dueDate") as string;
+    const liabilityDescription = formData.get("liabilityDescription") as string;
+    const liabilityNotes = formData.get("liabilityNotes") as string;
+
     if (!date || !description || !amount || !type || !accountId) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
@@ -74,7 +81,7 @@ export async function POST(request: Request) {
     }
 
     // Start a Prisma transaction to ensure atomicity
-    const transactionRecord = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Fetch related data for denormalization
       const [account, category, student, user] = await Promise.all([
         tx.financialAccount.findUnique({ where: { id: accountId } }),
@@ -91,74 +98,114 @@ export async function POST(request: Request) {
         throw new Error("User not found");
       }
 
-      // Get current balance before transaction
-      const currentAccount = await tx.financialAccount.findUnique({
-        where: { id: accountId },
-      });
+      let transactionRecord = null;
 
-      if (!currentAccount) {
-        throw new Error("Financial account not found");
-      }
+      // Handle liability transactions differently
+      if (isLiability) {
+        // For liability: DON'T create transaction, only create liability record
+        if (!vendorName || !dueDate) {
+          throw new Error("Vendor name and due date are required for liability transactions");
+        }
 
-      const balanceBefore = currentAccount.balance;
-      let balanceAfter = currentAccount.balance;
+        const liabilityRecord = await tx.liability.create({
+          data: {
+            vendorName,
+            amount: parsedAmount,
+            dueDate: new Date(dueDate),
+            description: liabilityDescription || description,
+            notes: liabilityNotes,
+            userId: session.user.id,
+          },
+        });
 
-      if (type === TransactionType.DEBIT) {
-        balanceAfter = balanceAfter.plus(parsedAmount);
-      } else if (type === TransactionType.CREDIT) {
-        balanceAfter = balanceAfter.minus(parsedAmount);
-      }
+        // Create audit log for liability creation
+        await tx.auditLog.create({
+          data: {
+            action: "CREATE_LIABILITY",
+            details: {
+              liabilityId: liabilityRecord.id,
+              vendorName: liabilityRecord.vendorName,
+              amount: liabilityRecord.amount,
+              dueDate: liabilityRecord.dueDate,
+              description: liabilityRecord.description,
+            },
+            userId: session.user.id,
+          },
+        });
 
-      const newTransaction = await tx.transaction.create({
-        data: {
-          date: new Date(date),
-          description,
-          amount: parsedAmount,
-          type,
-          accountId,
-          categoryId: categoryId && categoryId !== "none" ? categoryId : null,
-          studentId: studentId && studentId !== "none" ? studentId : null,
-          userId: session.user.id, // Associate transaction with the logged-in user
-          // Denormalized fields for data integrity
-          accountName: account.name,
-          categoryName: category?.name || null,
-          studentName: student?.name || null,
-          userName: user.name || user.email || "Unknown User",
-          // Balance tracking
-          balanceBefore,
-          balanceAfter,
-          // Optional proof file
-          proofFile: proofFilePath,
-        },
-      });
+        return liabilityRecord;
+      } else {
+        // Normal transaction: create transaction record
+        // Get current balance before transaction
+        const currentAccount = await tx.financialAccount.findUnique({
+          where: { id: accountId },
+        });
 
-      // Create audit log for transaction creation
-      await tx.auditLog.create({
-        data: {
-          action: `CREATE_TRANSACTION_${newTransaction.type}`,
-          details: {
-            transactionId: newTransaction.id,
-            description: newTransaction.description,
-            amount: newTransaction.amount,
-            accountId: newTransaction.accountId,
-            categoryId: newTransaction.categoryId,
-            studentId: newTransaction.studentId,
+        if (!currentAccount) {
+          throw new Error("Financial account not found");
+        }
+
+        const balanceBefore = currentAccount.balance;
+        let balanceAfter = currentAccount.balance;
+
+        // Normal transaction logic
+        if (type === TransactionType.DEBIT) {
+          balanceAfter = balanceAfter.plus(parsedAmount);
+        } else if (type === TransactionType.CREDIT) {
+          balanceAfter = balanceAfter.minus(parsedAmount);
+        }
+
+        transactionRecord = await tx.transaction.create({
+          data: {
+            date: new Date(date),
+            description,
+            amount: parsedAmount,
+            type,
+            accountId,
+            categoryId: categoryId && categoryId !== "none" ? categoryId : null,
+            studentId: studentId && studentId !== "none" ? studentId : null,
+            userId: session.user.id, // Associate transaction with the logged-in user
+            // Denormalized fields for data integrity
+            accountName: account.name,
+            categoryName: category?.name || null,
+            studentName: student?.name || null,
+            userName: user.name || user.email || "Unknown User",
+            // Balance tracking
+            balanceBefore,
+            balanceAfter,
+            // Optional proof file
             proofFile: proofFilePath,
           },
-          userId: session.user.id,
-        },
-      });
+        });
 
-      // Update financial account balance
-      await tx.financialAccount.update({
-        where: { id: accountId },
-        data: { balance: balanceAfter },
-      });
+        // Create audit log for transaction creation
+        await tx.auditLog.create({
+          data: {
+            action: `CREATE_TRANSACTION_${transactionRecord.type}`,
+            details: {
+              transactionId: transactionRecord.id,
+              description: transactionRecord.description,
+              amount: transactionRecord.amount,
+              accountId: transactionRecord.accountId,
+              categoryId: transactionRecord.categoryId,
+              studentId: transactionRecord.studentId,
+              proofFile: proofFilePath,
+            },
+            userId: session.user.id,
+          },
+        });
 
-      return newTransaction;
+        // Update financial account balance
+        await tx.financialAccount.update({
+          where: { id: accountId },
+          data: { balance: balanceAfter },
+        });
+
+        return transactionRecord;
+      }
     });
 
-    return NextResponse.json(transactionRecord, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Error creating transaction:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

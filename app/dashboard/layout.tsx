@@ -150,6 +150,12 @@ export default function DashboardLayout({
                   Transfer Dana
                 </Link>
               </Button>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/liabilities")} onClick={handleNavClick}>
+                <Link href="/dashboard/liabilities">
+                  <CreditCard className="h-4 w-4" />
+                  Kelola Hutang
+                </Link>
+              </Button>
             </CollapsibleContent>
           </Collapsible>
 

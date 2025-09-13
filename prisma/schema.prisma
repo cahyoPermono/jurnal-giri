@@ -27,6 +27,7 @@ model User {
   sessions      Session[]
   transactions  Transaction[]
   auditLogs     AuditLog[]
+  liabilities   Liability[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
@@ -141,6 +142,9 @@ model Transaction {
   // Optional transaction proof file
   proofFile   String?
 
+  // Relasi ke liability (untuk hutang)
+  liability   Liability?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -158,6 +162,33 @@ model Parameter {
   id        String   @id @default(cuid())
   key       String   @unique
   value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum LiabilityStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model Liability {
+  id          String          @id @default(cuid())
+  vendorName  String          // Nama vendor/supplier
+  amount      Decimal
+  dueDate     DateTime        // Tanggal jatuh tempo
+  status      LiabilityStatus @default(PENDING)
+  description String?         // Deskripsi hutang
+  notes       String?         // Catatan tambahan
+
+  // Relasi ke transaksi
+  transactionId String?   @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  // Relasi ke user yang mencatat
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
