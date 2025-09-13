@@ -65,6 +65,20 @@ async function main() {
     });
   }
 
+  // Create default parameters
+  const parameters = [
+    { key: "spp_amount", value: "500000" },
+    { key: "registration_fee", value: "100000" },
+  ];
+
+  for (const param of parameters) {
+    await prisma.parameter.upsert({
+      where: { key: param.key },
+      update: {},
+      create: param,
+    });
+  }
+
   console.log("Seeding finished.");
 }
 

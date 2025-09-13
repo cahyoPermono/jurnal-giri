@@ -24,7 +24,8 @@ import {
   LogOut,
   User,
   Menu,
-  X
+  X,
+  Settings
 } from "lucide-react";
 import type { Session } from "next-auth";
 
@@ -202,6 +203,12 @@ export default function DashboardLayout({
                   <Link href="/dashboard/admin/users">
                     <UserCog className="h-4 w-4" />
                     Kelola Operator
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className={navLinkClass("/dashboard/admin/parameters")} onClick={handleNavClick}>
+                  <Link href="/dashboard/admin/parameters">
+                    <Settings className="h-4 w-4" />
+                    Kelola Parameter
                   </Link>
                 </Button>
                 <Button asChild variant="ghost" className={navLinkClass("/dashboard/admin/audit-logs")} onClick={handleNavClick}>
