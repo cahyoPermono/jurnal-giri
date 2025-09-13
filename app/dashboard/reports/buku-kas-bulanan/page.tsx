@@ -1,0 +1,226 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { exportToPdf } from "@/lib/pdf-export";
+import { toast } from "sonner";
+
+interface BukuKasEntry {
+  tanggal: string;
+  no: number;
+  uraian: string;
+  debet: number;
+  credit: number;
+  saldo: number;
+}
+
+export default function BukuKasBulananReportPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const [reportData, setReportData] = useState<BukuKasEntry[]>([]);
+  const [minggu, setMinggu] = useState<string>("");
+  const [bulan, setBulan] = useState<string>("");
+  const [tahun, setTahun] = useState<string>("");
+
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session) {
+      router.push("/login");
+    }
+  }, [session, status, router]);
+
+  const fetchReportData = async () => {
+    if (!minggu || !bulan || !tahun) {
+      toast.error("Semua field harus diisi");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    const params = new URLSearchParams();
+    params.append("minggu", minggu);
+    params.append("bulan", bulan);
+    params.append("tahun", tahun);
+
+    try {
+      const res = await fetch(`/api/reports/buku-kas-bulanan?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch buku kas bulanan report");
+      }
+      const data = await res.json();
+      setReportData(data);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error("Failed to fetch buku kas bulanan report: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportPdf = () => {
+    exportToPdf("buku-kas-bulanan-report", "buku-kas-bulanan-report.pdf");
+    toast.success("PDF export started!");
+  };
+
+  if (status === "loading") {
+    return <p>Memuat...</p>;
+  }
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Buku Kas Bulanan</CardTitle>
+        <CardDescription>Laporan transaksi kas bulanan berdasarkan minggu, bulan, dan tahun.</CardDescription>
+      </CardHeader>
+      <CardContent id="buku-kas-bulanan-report" className="space-y-6">
+        {/* Hidden elements for PDF export */}
+        <div style={{ display: 'none' }}>
+          <p>Bulan: {bulan ? ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][parseInt(bulan) - 1] : ''}</p>
+          <p>Tahun: {tahun}</p>
+          <p>{minggu === '1-2' ? 'Minggu ke 1-2' : minggu === '3-4' ? 'Minggu ke 3-4' : ''}</p>
+        </div>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid gap-2">
+            <Label htmlFor="minggu">Minggu</Label>
+            <Select value={minggu} onValueChange={setMinggu}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih minggu" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1-2">Minggu ke 1-2</SelectItem>
+                <SelectItem value="3-4">Minggu ke 3-4</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="bulan">Bulan</Label>
+            <Select value={bulan} onValueChange={setBulan}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Januari</SelectItem>
+                <SelectItem value="2">Februari</SelectItem>
+                <SelectItem value="3">Maret</SelectItem>
+                <SelectItem value="4">April</SelectItem>
+                <SelectItem value="5">Mei</SelectItem>
+                <SelectItem value="6">Juni</SelectItem>
+                <SelectItem value="7">Juli</SelectItem>
+                <SelectItem value="8">Agustus</SelectItem>
+                <SelectItem value="9">September</SelectItem>
+                <SelectItem value="10">Oktober</SelectItem>
+                <SelectItem value="11">November</SelectItem>
+                <SelectItem value="12">Desember</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="tahun">Tahun</Label>
+            <Input
+              id="tahun"
+              type="number"
+              placeholder="Masukkan tahun"
+              value={tahun}
+              onChange={(e) => setTahun(e.target.value)}
+              min="2000"
+              max="2100"
+            />
+          </div>
+        </div>
+
+        <Button onClick={fetchReportData} disabled={loading} className="mb-4">
+          {loading ? "Memuat..." : "Tampilkan Laporan"}
+        </Button>
+
+        {reportData.length > 0 && (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>No.</TableHead>
+                  <TableHead>Uraian</TableHead>
+                  <TableHead className="text-right">Debet</TableHead>
+                  <TableHead className="text-right">Credit</TableHead>
+                  <TableHead className="text-right">Saldo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reportData.map((entry, index) => {
+                  // Baris kosong
+                  if (entry.no === 0 && entry.uraian === "") {
+                    return (
+                      <TableRow key={index}>
+                        <TableCell colSpan={6} className="h-4"></TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  // Baris total
+                  if (entry.uraian === "TOTAL") {
+                    return (
+                      <TableRow key={index} className="border-t-2 font-bold bg-gray-50">
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell className="font-bold">{entry.uraian}</TableCell>
+                        <TableCell className="text-right font-bold">
+                          {entry.debet.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {entry.credit.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {entry.saldo.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  // Baris normal
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>{entry.tanggal}</TableCell>
+                      <TableCell>{entry.no}</TableCell>
+                      <TableCell>{entry.uraian}</TableCell>
+                      <TableCell className="text-right">
+                        {entry.debet > 0 ? entry.debet.toFixed(2) : ""}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {entry.credit > 0 ? entry.credit.toFixed(2) : ""}
+                      </TableCell>
+                      <TableCell className="text-right">{entry.saldo.toFixed(2)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+
+            <Button onClick={handleExportPdf} className="mt-4">Ekspor ke PDF</Button>
+          </>
+        )}
+
+        {!reportData.length && !error && !loading && (
+          <p className="text-gray-500 text-center">Pilih filter dan klik "Tampilkan Laporan" untuk melihat data.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

@@ -7,11 +7,48 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
     return;
   }
 
+  // Helper function to format date to Indonesian format
+  const formatIndonesianDate = (dateString: string): string => {
+    if (!dateString || dateString === "") return "";
+    try {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Helper function to format number to Indonesian Rupiah
+  const formatRupiah = (amount: string | number): string => {
+    if (!amount || amount === "" || amount === "0") return "";
+    try {
+      const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+      if (isNaN(num)) return amount.toString();
+
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(num);
+    } catch {
+      return amount.toString();
+    }
+  };
+
   try {
     // Check if this is the rekap-semester report
     const isRekapSemester = elementId === 'rekap-semester-report';
     const isRekapPenerimaanBulan = elementId === 'rekap-penerimaan-bulan-report';
     const isLaporanKeuanganBulanan = elementId === 'laporan-keuangan-bulanan-report';
+    const isBukuKasBulanan = elementId === 'buku-kas-bulanan-report';
 
     // Extract table data directly from the DOM
     const table = input.querySelector('table');
@@ -112,6 +149,38 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
       });
 
       pdf.text(`BULAN ${monthName} ${year}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+    } else if (isBukuKasBulanan) {
+      // Custom header for buku kas bulanan
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('BUKU KAS KB SUNAN GIRI', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
+
+      // Extract bulan, tahun, and minggu from the page
+      const bulanElements = input.querySelectorAll('p, span, div');
+      let bulanName = '';
+      let tahun = '';
+      let minggu = '';
+      bulanElements.forEach(el => {
+        const text = el.textContent || '';
+        // Look for bulan name
+        const bulanNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        bulanNames.forEach(name => {
+          if (text.includes(name)) bulanName = name;
+        });
+        // Look for tahun
+        const tahunMatch = text.match(/(\d{4})/);
+        if (tahunMatch && !tahun) tahun = tahunMatch[1];
+        // Look for minggu
+        if (text.includes('Minggu ke 1-2')) minggu = 'Minggu ke 1-2';
+        if (text.includes('Minggu ke 3-4')) minggu = 'Minggu ke 3-4';
+      });
+
+      pdf.setFontSize(12);
+      pdf.text(`BULAN ${bulanName} ${tahun}`, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
+      pdf.text(minggu, pageWidth / 2, yPosition, { align: 'center' });
       yPosition += 15;
     } else if (elementId === 'transactions-table') {
       // Custom header for transactions table
@@ -275,13 +344,24 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         totalWidth * 0.20, // Pengeluaran - 20%
         totalWidth * 0.20  // Total Pengeluaran - 20%
       ];
+    } else if (isBukuKasBulanan) {
+      // Custom widths for buku kas bulanan: Tanggal, No (narrow), Uraian (wide), Debet, Credit, Saldo
+      const totalWidth = pageWidth - 2 * margin;
+      columnWidths = [
+        totalWidth * 0.20, // Tanggal - 20% (diperlebar agar tidak menabrak)
+        totalWidth * 0.06, // No - 6% (narrow for numbers up to hundreds)
+        totalWidth * 0.28, // Uraian - 28% (dikecilkan sedikit agar lebih proporsional)
+        totalWidth * 0.155, // Debet - 15.5%
+        totalWidth * 0.155, // Credit - 15.5%
+        totalWidth * 0.155  // Saldo - 15.5%
+      ];
     } else {
       // Equal widths for other reports
       const columnWidth = (pageWidth - 2 * margin) / headers.length;
       columnWidths = new Array(headers.length).fill(columnWidth);
     }
 
-    if (isRekapSemester || isRekapPenerimaanBulan || isLaporanKeuanganBulanan || elementId === 'transactions-table') {
+    if (isRekapSemester || isRekapPenerimaanBulan || isLaporanKeuanganBulanan || isBukuKasBulanan || elementId === 'transactions-table') {
       // Draw table with full borders for rekap reports and transactions
       const tableStartY = yPosition;
       const rowHeight = 10;
@@ -313,12 +393,29 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
 
       // Draw table rows with borders
       pdf.setFont('helvetica', 'normal');
-      rows.forEach((row) => {
+      rows.forEach((row, rowIndex) => {
         const currentY = yPosition;
         let maxRowHeight = rowHeight;
 
+        // Check if this is an empty row (for Buku Kas Bulanan spacing)
+        const isEmptyRow = isBukuKasBulanan && (
+          row.every(cell => cell === "" || cell === "0") ||
+          (row.length === 1 && row[0] === "") ||
+          (row.length === 6 && row.every(cell => cell === "" || cell === "0"))
+        );
+
         // Pre-calculate max row height for text wrapping
         if (isRekapPenerimaanBulan && row[2]) {
+          const uraianCellText = row[2] || '';
+          const uraianCellWidth = columnWidths[2] - 4; // account for padding
+          const lines = pdf.splitTextToSize(uraianCellText, uraianCellWidth);
+          const textHeight = lines.length * 5; // approximate line height. 5mm per line.
+          const requiredHeight = textHeight + 8; // text starts at y+3, rect at y-5, so 8mm difference for padding
+          if (requiredHeight > maxRowHeight) {
+            maxRowHeight = requiredHeight;
+          }
+        } else if (isBukuKasBulanan && row[2] && !isEmptyRow) {
+          // Text wrapping for Uraian column (index 2) in Buku Kas Bulanan
           const uraianCellText = row[2] || '';
           const uraianCellWidth = columnWidths[2] - 4; // account for padding
           const lines = pdf.splitTextToSize(uraianCellText, uraianCellWidth);
@@ -343,30 +440,64 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
           });
         }
 
+        // Ensure empty rows have minimum height for proper border display
+        if (isEmptyRow) {
+          maxRowHeight = Math.max(maxRowHeight, 8); // Minimum height for empty rows
+        }
+
         // Draw the rectangle for the entire row
         pdf.rect(margin, currentY - 5, tableWidth, maxRowHeight);
 
-        row.forEach((cell, cellIndex) => {
-          const x = margin + columnWidths.slice(0, cellIndex).reduce((sum, width) => sum + width, 0);
-          const cellWidth = columnWidths[cellIndex] - 4;
-
-          // Draw cell content with text wrapping
-          if (isRekapPenerimaanBulan && cellIndex === 2) {
-            const lines = pdf.splitTextToSize(cell, cellWidth);
-            pdf.text(lines, x + 2, currentY + 3);
-          } else if (elementId === 'transactions-table' && [1, 4, 5, 6].includes(cellIndex)) {
-            const lines = pdf.splitTextToSize(cell, cellWidth);
-            pdf.text(lines, x + 2, currentY + 3);
-          } else {
-            pdf.text(cell, x + 2, currentY + 3);
+        // Handle empty rows differently - draw all vertical lines even if no content
+        if (isEmptyRow) {
+          // For empty rows, draw all vertical lines to create proper grid
+          for (let cellIndex = 0; cellIndex < headers.length; cellIndex++) {
+            const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
+            if (cellIndex < headers.length - 1) {
+              pdf.line(nextX, currentY - 5, nextX, currentY - 5 + maxRowHeight);
+            }
           }
+        } else {
+          // Normal row processing
+          row.forEach((cell, cellIndex) => {
+            const x = margin + columnWidths.slice(0, cellIndex).reduce((sum, width) => sum + width, 0);
+            const cellWidth = columnWidths[cellIndex] - 4;
 
-          // Draw vertical divider lines
-          const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
-          if (cellIndex < headers.length - 1) {
-            pdf.line(nextX, currentY - 5, nextX, currentY - 5 + maxRowHeight);
-          }
-        });
+            let displayText = cell;
+
+            // Apply formatting for Buku Kas Bulanan
+            if (isBukuKasBulanan) {
+              if (cellIndex === 0) {
+                // Format tanggal untuk kolom Tanggal (index 0)
+                displayText = formatIndonesianDate(cell);
+              } else if ([3, 4, 5].includes(cellIndex)) {
+                // Format Rupiah untuk kolom Debet, Credit, Saldo (index 3, 4, 5)
+                displayText = formatRupiah(cell);
+              }
+            }
+
+            // Draw cell content with text wrapping
+            if (isRekapPenerimaanBulan && cellIndex === 2) {
+              const lines = pdf.splitTextToSize(displayText, cellWidth);
+              pdf.text(lines, x + 2, currentY + 3);
+            } else if (isBukuKasBulanan && cellIndex === 2) {
+              // Text wrapping for Uraian column (index 2) in Buku Kas Bulanan
+              const lines = pdf.splitTextToSize(displayText, cellWidth);
+              pdf.text(lines, x + 2, currentY + 3);
+            } else if (elementId === 'transactions-table' && [1, 4, 5, 6].includes(cellIndex)) {
+              const lines = pdf.splitTextToSize(displayText, cellWidth);
+              pdf.text(lines, x + 2, currentY + 3);
+            } else {
+              pdf.text(displayText, x + 2, currentY + 3);
+            }
+
+            // Draw vertical divider lines
+            const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
+            if (cellIndex < headers.length - 1) {
+              pdf.line(nextX, currentY - 5, nextX, currentY - 5 + maxRowHeight);
+            }
+          });
+        }
 
         yPosition += maxRowHeight;
       });

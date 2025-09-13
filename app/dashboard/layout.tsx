@@ -183,6 +183,12 @@ export default function DashboardLayout({
                   Laporan Keuangan Bulanan
                 </Link>
               </Button>
+              <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/buku-kas-bulanan")} onClick={handleNavClick}>
+                <Link href="/dashboard/reports/buku-kas-bulanan">
+                  <FileText className="h-4 w-4" />
+                  Buku Kas Bulanan
+                </Link>
+              </Button>
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/student-liabilities")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/student-liabilities">
                   <CreditCard className="h-4 w-4" />
