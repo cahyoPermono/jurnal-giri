@@ -148,16 +148,16 @@ export default function ProfitLossReportPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-lg font-medium">Total Income (Debit):</p>
-              <p className="text-lg font-bold text-green-600">{parseFloat(reportData.totalDebit).toFixed(2)}</p>
+              <p className="text-lg font-bold text-green-600">{reportData.totalDebit.toFixed(2)}</p>
             </div>
             <div className="flex justify-between items-center">
               <p className="text-lg font-medium">Total Expenses (Credit):</p>
-              <p className="text-lg font-bold text-red-600">{parseFloat(reportData.totalCredit).toFixed(2)}</p>
+              <p className="text-lg font-bold text-red-600">{reportData.totalCredit.toFixed(2)}</p>
             </div>
             <div className="flex justify-between items-center border-t pt-4">
               <p className="text-xl font-semibold">Net Profit/Loss:</p>
-              <p className={`text-xl font-bold ${parseFloat(reportData.netProfitLoss) >= 0 ? "text-green-700" : "text-red-700"}`}>
-                {parseFloat(reportData.netProfitLoss).toFixed(2)}
+              <p className={`text-xl font-bold ${reportData.netProfitLoss >= 0 ? "text-green-700" : "text-red-700"}`}>
+                {reportData.netProfitLoss.toFixed(2)}
               </p>
             </div>
           </div>

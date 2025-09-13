@@ -1,11 +1,11 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { TransactionType } from "@prisma/client";
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 
     // Notifications (e.g., students with overdue payments - placeholder for now)
     // This would require more complex logic based on payment schedules and student transactions
-    const notifications = [
+    const notifications: any[] = [
       // { type: "warning", message: "Student A has overdue SPP payment." },
       // { type: "info", message: "Upcoming event payment due." },
     ];

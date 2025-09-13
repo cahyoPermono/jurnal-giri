@@ -176,8 +176,8 @@ export default function StudentLiabilitiesReportPage() {
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>{student.nis}</TableCell>
-                    <TableCell className={parseFloat(student.liability) >= 0 ? "text-green-600" : "text-red-600"}>
-                      {parseFloat(student.liability).toFixed(2)}
+                    <TableCell className={student.liability >= 0 ? "text-green-600" : "text-red-600"}>
+                      {student.liability.toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Dialog>
@@ -213,7 +213,7 @@ export default function StudentLiabilitiesReportPage() {
                                     <TableRow key={tx.id}>
                                       <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
                                       <TableCell>{tx.description}</TableCell>
-                                      <TableCell>{parseFloat(tx.amount).toFixed(2)}</TableCell>
+                                      <TableCell>{tx.amount.toFixed(2)}</TableCell>
                                       <TableCell>{tx.type}</TableCell>
                                     </TableRow>
                                   ))

@@ -34,7 +34,7 @@ export default function ManageUsersPage() {
   useEffect(() => {
     if (status === "loading") return;
 
-    if (!session || session.user?.role !== "ADMIN") {
+    if (!session || (session.user as any)?.role !== "ADMIN") {
       router.push("/login"); // Redirect if not authenticated or not admin
     }
 

@@ -1,11 +1,11 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { TransactionType } from "@prisma/client";
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
 
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -45,8 +45,8 @@ export async function GET(request: Request) {
       },
     });
 
-    const totalDebit = debitTransactions._sum.amount || 0;
-    const totalCredit = creditTransactions._sum.amount || 0;
+    const totalDebit = debitTransactions._sum.amount?.toNumber() || 0;
+    const totalCredit = creditTransactions._sum.amount?.toNumber() || 0;
     const netProfitLoss = totalDebit - totalCredit;
 
     return NextResponse.json({
