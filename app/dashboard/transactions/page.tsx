@@ -143,6 +143,138 @@ export default function ViewTransactionsPage() {
 
   const filteredCategoriesForFilter = categories.filter(cat => typeFilter === undefined || cat.type === typeFilter);
 
+  const exportProofsToPdf = async () => {
+    const transactionsWithProofs = transactions.filter(t => t.proofFile);
+
+    if (transactionsWithProofs.length === 0) {
+      toast.error("Tidak ada transaksi dengan bukti untuk diekspor");
+      return;
+    }
+
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15; // Reduced margin for more space
+
+      // Header
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('BUKTI TRANSAKSI', pageWidth / 2, margin, { align: 'center' });
+      pdf.setFontSize(10);
+      pdf.text('KB SUNAN GIRI', pageWidth / 2, margin + 6, { align: 'center' });
+
+      // Add date range information
+      const dateRangeText = startDate && endDate
+        ? `Periode: ${startDate.toLocaleDateString('id-ID')} - ${endDate.toLocaleDateString('id-ID')}`
+        : 'Semua Periode';
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(dateRangeText, pageWidth / 2, margin + 12, { align: 'center' });
+
+      let yPosition = margin + 20;
+
+      for (const transaction of transactionsWithProofs) {
+        // Check if we need a new page (leave space for signature)
+        if (yPosition > pageHeight - 80) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Transaction details - only essential info
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        const dateStr = new Date(transaction.date).toLocaleDateString('id-ID');
+        const amountStr = `Rp ${Number(transaction.amount).toLocaleString('id-ID')}`;
+
+        pdf.text(`Tanggal: ${dateStr}`, margin, yPosition);
+        yPosition += 4;
+        pdf.text(`Deskripsi: ${transaction.description}`, margin, yPosition);
+        yPosition += 4;
+        pdf.text(`Jumlah: ${amountStr}`, margin, yPosition);
+        yPosition += 6;
+
+        // Try to add the proof image
+        if (transaction.proofFile) {
+          try {
+            const response = await fetch(transaction.proofFile);
+            if (response.ok) {
+              const blob = await response.blob();
+              if (blob.type.startsWith('image/')) {
+                const base64 = await new Promise<string>((resolve) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result as string);
+                  reader.readAsDataURL(blob);
+                });
+
+                // Create image element to get dimensions
+                const img = new Image();
+                await new Promise((resolve) => {
+                  img.onload = resolve;
+                  img.src = base64;
+                });
+
+                // Calculate proportional dimensions to fit within page
+                const maxWidth = pageWidth - 2 * margin;
+                const maxHeight = 60; // Smaller height for more compact layout
+
+                let imgWidth = maxWidth;
+                let imgHeight = (img.height * maxWidth) / img.width;
+
+                // If height exceeds max, scale down
+                if (imgHeight > maxHeight) {
+                  imgHeight = maxHeight;
+                  imgWidth = (img.width * maxHeight) / img.height;
+                }
+
+                pdf.addImage(base64, 'JPEG', margin, yPosition, imgWidth, imgHeight);
+                yPosition += imgHeight + 8;
+              } else {
+                pdf.setFontSize(8);
+                pdf.text(`Bukti: ${blob.type} - Tidak dapat ditampilkan`, margin, yPosition);
+                yPosition += 8;
+              }
+            }
+          } catch (error) {
+            pdf.setFontSize(8);
+            pdf.text(`Bukti: Gagal memuat file`, margin, yPosition);
+            yPosition += 8;
+          }
+        }
+
+        // Smaller space between transactions
+        yPosition += 10;
+      }
+
+      // Add signature at the end
+      const currentDate = new Date();
+      const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
+
+      pdf.setFontSize(8);
+      pdf.text(`Jember, ${formattedDate}`, pageWidth - margin - 50, yPosition);
+
+      const titleY = yPosition + 5;
+      pdf.text('Pengelola KB', margin, titleY);
+      pdf.text('Bendahara', pageWidth - margin - 50, titleY);
+
+      const signatureY = titleY + 15;
+      pdf.text('(Zulfa Mazidah, S.Pd.I)', margin, signatureY);
+      pdf.text('(Wiwin Fauziyah, S.sos)', pageWidth - margin - 50, signatureY);
+
+      pdf.save('bukti-transaksi.pdf');
+      toast.success("PDF bukti berhasil diekspor");
+    } catch (error) {
+      console.error("Error exporting proofs to PDF:", error);
+      toast.error("Gagal mengekspor PDF bukti");
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -271,7 +403,11 @@ export default function ViewTransactionsPage() {
           </div>
         </div>
 
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 space-x-2">
+          <Button onClick={() => exportProofsToPdf()} variant="outline">
+            <DownloadIcon className="mr-2 h-4 w-4" />
+            Export Bukti
+          </Button>
           <Button onClick={() => exportToPdf('transactions-table', 'transactions.pdf')} variant="outline">
             <DownloadIcon className="mr-2 h-4 w-4" />
             Ekspor ke PDF
