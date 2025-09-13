@@ -57,6 +57,7 @@ export default function NewTransactionPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isStudentRequired, setIsStudentRequired] = useState(false);
+  const [shouldHideStudentField, setShouldHideStudentField] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -93,11 +94,15 @@ export default function NewTransactionPage() {
       const selectedAccount = financialAccounts.find(account => account.id === accountId);
       if (selectedAccount && (selectedAccount.name === "SPP" || selectedAccount.name === "Pendaftaran")) {
         setIsStudentRequired(true);
+        setShouldHideStudentField(false);
       } else {
         setIsStudentRequired(false);
+        setShouldHideStudentField(true);
+        setStudentId(undefined); // Clear student selection when hiding
       }
     } else {
       setIsStudentRequired(false);
+      setShouldHideStudentField(false);
     }
   }, [accountId, financialAccounts, type]);
 
@@ -316,25 +321,27 @@ export default function NewTransactionPage() {
               </Select>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="studentId" className="flex items-center text-sm font-medium">
-                <UserIcon className="mr-2 h-4 w-4 text-secondary" />
-                Siswa {isStudentRequired ? "" : "(Opsional)"}
-              </Label>
-              <Select value={studentId} onValueChange={setStudentId} required={isStudentRequired}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Pilih siswa" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Tidak Ada</SelectItem>
-                  {students.map((student) => (
-                    <SelectItem key={student.id} value={student.id}>
-                      {student.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!shouldHideStudentField && (
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="studentId" className="flex items-center text-sm font-medium">
+                  <UserIcon className="mr-2 h-4 w-4 text-secondary" />
+                  Siswa {isStudentRequired ? "" : "(Opsional)"}
+                </Label>
+                <Select value={studentId} onValueChange={setStudentId} required={isStudentRequired}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Pilih siswa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Tidak Ada</SelectItem>
+                    {students.map((student) => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}
