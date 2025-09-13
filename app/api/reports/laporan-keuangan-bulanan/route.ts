@@ -55,71 +55,49 @@ export async function GET(request: Request) {
     });
     const saldoAwal = (debitResult._sum.amount?.toNumber() || 0) - (creditResult._sum.amount?.toNumber() || 0);
 
-    // Helper function to sum transactions
-    const sumTransactions = async (where: any) => {
-      const result = await prisma.transaction.aggregate({
-        _sum: {
-          amount: true,
+    // Fetch debit transactions grouped by category
+    const debitTransactions = await prisma.transaction.groupBy({
+      by: ['categoryName'],
+      _sum: {
+        amount: true,
+      },
+      where: {
+        type: TransactionType.DEBIT,
+        date: {
+          gte: startDate,
+          lte: endDate,
         },
-        where: {
-          ...where,
-          date: {
-            gte: startDate,
-            lte: endDate,
-          },
+      },
+      orderBy: {
+        categoryName: 'asc',
+      },
+    });
+
+    // Fetch credit transactions grouped by category
+    const creditTransactions = await prisma.transaction.groupBy({
+      by: ['categoryName'],
+      _sum: {
+        amount: true,
+      },
+      where: {
+        type: TransactionType.CREDIT,
+        date: {
+          gte: startDate,
+          lte: endDate,
         },
-      });
-      return result._sum.amount?.toNumber() || 0;
-    };
-
-    // Penerimaan
-    const kasSPP = await sumTransactions({
-      account: { name: "SPP" },
-      type: TransactionType.DEBIT,
+      },
+      orderBy: {
+        categoryName: 'asc',
+      },
     });
 
-    const pendaftaran = await sumTransactions({
-      account: { name: "Pendaftaran" },
-      type: TransactionType.DEBIT,
-    });
-
-    const uangKegiatan = await sumTransactions({
-      account: { name: "Kegiatan" },
-      type: TransactionType.DEBIT,
-    });
-
-    const lainLain = await sumTransactions({
-      account: { name: "Lain-lain" },
-      type: TransactionType.DEBIT,
-    });
-
-    const pinjamSementara = 0; // Empty
-
-    // Pengeluaran
-    const rutin = await sumTransactions({
-      category: { name: "Rutin" },
-      type: TransactionType.CREDIT,
-    });
-
-    const kegiatanPengeluaran = await sumTransactions({
-      category: { name: "Kegiatan" },
-      type: TransactionType.CREDIT,
-    });
-
-    const bayarPinjaman = 0; // Empty
-
-    const setorBank = await sumTransactions({
-      category: { name: "Setor bank" },
-      type: TransactionType.CREDIT,
-    });
-
-    // Totals
-    const totalPenerimaan = kasSPP + pendaftaran + uangKegiatan + lainLain + pinjamSementara;
-    const totalPengeluaran = rutin + kegiatanPengeluaran + bayarPinjaman + setorBank;
+    // Calculate totals
+    const totalPenerimaan = debitTransactions.reduce((sum, item) => sum + (item._sum.amount?.toNumber() || 0), 0);
+    const totalPengeluaran = creditTransactions.reduce((sum, item) => sum + (item._sum.amount?.toNumber() || 0), 0);
     const saldoAkhir = saldoAwal + totalPenerimaan - totalPengeluaran;
 
-    // Report data
-    const report = [
+    // Build report data dynamically
+    const report: any[] = [
       {
         no1: "",
         penerimaan: "Saldo awal",
@@ -128,63 +106,48 @@ export async function GET(request: Request) {
         pengeluaran: "",
         totalPengeluaran: "",
       },
-      {
-        no1: 1,
-        penerimaan: "Kas SPP",
-        totalPenerimaan: kasSPP,
-        no2: 1,
-        pengeluaran: "Rutin",
-        totalPengeluaran: rutin,
-      },
-      {
-        no1: 2,
-        penerimaan: "Pendaftaran",
-        totalPenerimaan: pendaftaran,
-        no2: 2,
-        pengeluaran: "Kegiatan",
-        totalPengeluaran: kegiatanPengeluaran,
-      },
-      {
-        no1: 3,
-        penerimaan: "Uang Kegiatan",
-        totalPenerimaan: uangKegiatan,
-        no2: 3,
-        pengeluaran: "Bayar pinjaman",
-        totalPengeluaran: "",
-      },
-      {
-        no1: 4,
-        penerimaan: "lain-lain",
-        totalPenerimaan: lainLain,
-        no2: 4,
-        pengeluaran: "Setor bank",
-        totalPengeluaran: setorBank,
-      },
-      {
-        no1: 5,
-        penerimaan: "Pinjam sementara",
-        totalPenerimaan: "",
-        no2: "",
-        pengeluaran: "",
-        totalPengeluaran: "",
-      },
-      {
-        no1: "",
-        penerimaan: "",
-        totalPenerimaan: "",
-        no2: "",
-        pengeluaran: "",
-        totalPengeluaran: "",
-      },
-      {
-        no1: "",
-        penerimaan: "Total penerimaan",
-        totalPenerimaan: totalPenerimaan,
-        no2: "",
-        pengeluaran: "Total Pengeluaran",
-        totalPengeluaran: totalPengeluaran,
-      },
     ];
+
+    const maxRows = Math.max(debitTransactions.length, creditTransactions.length);
+
+    for (let i = 0; i < maxRows; i++) {
+      const debit = debitTransactions[i];
+      const credit = creditTransactions[i];
+
+      const debitCategory = debit ? (debit.categoryName || "Tanpa Kategori") : "";
+      const debitAmount = debit ? (debit._sum.amount?.toNumber() || 0) : "";
+      const creditCategory = credit ? (credit.categoryName || "Tanpa Kategori") : "";
+      const creditAmount = credit ? (credit._sum.amount?.toNumber() || 0) : "";
+
+      report.push({
+        no1: debit ? i + 1 : "",
+        penerimaan: debitCategory,
+        totalPenerimaan: debitAmount,
+        no2: credit ? i + 1 : "",
+        pengeluaran: creditCategory,
+        totalPengeluaran: creditAmount,
+      });
+    }
+
+    // Add empty row
+    report.push({
+      no1: "",
+      penerimaan: "",
+      totalPenerimaan: "",
+      no2: "",
+      pengeluaran: "",
+      totalPengeluaran: "",
+    });
+
+    // Add totals
+    report.push({
+      no1: "",
+      penerimaan: "Total penerimaan",
+      totalPenerimaan: totalPenerimaan,
+      no2: "",
+      pengeluaran: "Total Pengeluaran",
+      totalPengeluaran: totalPengeluaran,
+    });
 
     // Signature date
     const signatureDate = endDate.toLocaleDateString('id-ID', {
