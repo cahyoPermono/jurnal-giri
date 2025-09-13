@@ -54,13 +54,18 @@ export default function ViewTransactionsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Calculate default dates: start of current month to end of current month
+  const now = new Date();
+  const defaultStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
-  const [accountFilter, setAccountFilter] = useState<string | undefined>(undefined);
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
-  const [studentFilter, setStudentFilter] = useState<string | undefined>(undefined);
+  const [startDate, setStartDate] = useState<Date | undefined>(defaultStartDate);
+  const [endDate, setEndDate] = useState<Date | undefined>(defaultEndDate);
+  const [typeFilter, setTypeFilter] = useState<string | undefined>("all");
+  const [accountFilter, setAccountFilter] = useState<string | undefined>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>("all");
+  const [studentFilter, setStudentFilter] = useState<string | undefined>("all");
 
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
