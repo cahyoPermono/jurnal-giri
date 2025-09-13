@@ -132,7 +132,7 @@ export default function ViewTransactionsPage() {
   };
 
   if (status === "loading") {
-    return <p>Loading...</p>;
+    return <p>Memuat...</p>;
   }
 
   const filteredCategoriesForFilter = categories.filter(cat => typeFilter === undefined || cat.type === typeFilter);
@@ -140,15 +140,15 @@ export default function ViewTransactionsPage() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>View Transactions</CardTitle>
-        <CardDescription>Browse and filter all financial transactions.</CardDescription>
+        <CardTitle>Lihat Transaksi</CardTitle>
+        <CardDescription>Jelajahi dan filter semua transaksi keuangan.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           <div className="grid gap-2">
-            <Label htmlFor="startDate">Start Date</Label>
+            <Label htmlFor="startDate">Tanggal Mulai</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -159,7 +159,7 @@ export default function ViewTransactionsPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                  {startDate ? format(startDate, "PPP") : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -174,7 +174,7 @@ export default function ViewTransactionsPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="endDate">End Date</Label>
+            <Label htmlFor="endDate">Tanggal Akhir</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -185,7 +185,7 @@ export default function ViewTransactionsPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                  {endDate ? format(endDate, "PPP") : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -200,27 +200,27 @@ export default function ViewTransactionsPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="typeFilter">Type</Label>
+            <Label htmlFor="typeFilter">Tipe</Label>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="All Types" />
+                <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="DEBIT">DEBIT (Income)</SelectItem>
-                <SelectItem value="CREDIT">CREDIT (Expense)</SelectItem>
+                <SelectItem value="all">Semua Tipe</SelectItem>
+                <SelectItem value="DEBIT">DEBIT (Pemasukan)</SelectItem>
+                <SelectItem value="CREDIT">CREDIT (Pengeluaran)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="accountFilter">Account</Label>
+            <Label htmlFor="accountFilter">Akun</Label>
             <Select value={accountFilter} onValueChange={setAccountFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="All Accounts" />
+                <SelectValue placeholder="Semua Akun" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Accounts</SelectItem>
+                <SelectItem value="all">Semua Akun</SelectItem>
                 {financialAccounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
                     {account.name}
@@ -231,13 +231,13 @@ export default function ViewTransactionsPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="categoryFilter">Category</Label>
+            <Label htmlFor="categoryFilter">Kategori</Label>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder="Semua Kategori" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">Semua Kategori</SelectItem>
                 {filteredCategoriesForFilter.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -248,13 +248,13 @@ export default function ViewTransactionsPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="studentFilter">Student</Label>
+            <Label htmlFor="studentFilter">Siswa</Label>
             <Select value={studentFilter} onValueChange={setStudentFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="All Students" />
+                <SelectValue placeholder="Semua Siswa" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="all">Semua Siswa</SelectItem>
                 {students.map((student) => (
                   <SelectItem key={student.id} value={student.id}>
                     {student.name}
@@ -268,7 +268,7 @@ export default function ViewTransactionsPage() {
         <div className="flex justify-end mb-4">
           <Button onClick={() => exportToPdf('transactions-table', 'transactions.pdf')} variant="outline">
             <DownloadIcon className="mr-2 h-4 w-4" />
-            Export to PDF
+            Ekspor ke PDF
           </Button>
         </div>
 
@@ -279,21 +279,21 @@ export default function ViewTransactionsPage() {
           <Table className="min-w-full">
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Account</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Recorded By</TableHead>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Deskripsi</TableHead>
+                <TableHead>Jumlah</TableHead>
+                <TableHead>Tipe</TableHead>
+                <TableHead>Akun</TableHead>
+                <TableHead>Kategori</TableHead>
+                <TableHead>Siswa</TableHead>
+                <TableHead>Dicatat Oleh</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-24 text-center">
-                    No transactions found.
+                    Tidak ada transaksi ditemukan.
                   </TableCell>
                 </TableRow>
               ) : (
