@@ -12,6 +12,13 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Fetch parameters from database
+    const sppParam = await prisma.parameter.findUnique({ where: { key: "spp_amount" } });
+    const registrationParam = await prisma.parameter.findUnique({ where: { key: "registration_fee" } });
+
+    const MONTHLY_SPP_FEE = sppParam ? parseInt(sppParam.value) : 50000; // Default to 50000 if not found
+    const REGISTRATION_FEE = registrationParam ? parseInt(registrationParam.value) : 100000; // Default to 100000 if not found
+
     const students = await prisma.student.findMany({
       where: {
         active: true,
@@ -30,9 +37,6 @@ export async function GET(request: Request) {
       },
       orderBy: { name: "asc" },
     });
-
-    const REGISTRATION_FEE = 100000; // Fixed registration fee
-    const MONTHLY_SPP_FEE = 50000; // Monthly SPP fee
 
     const reportData = students.map(student => {
       const enrollmentDate = student.enrollmentDate!;
