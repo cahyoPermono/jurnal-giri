@@ -198,6 +198,8 @@ export default function ViewTransactionsPage() {
         pdf.text(`Deskripsi: ${transaction.description}`, margin, yPosition);
         yPosition += 4;
         pdf.text(`Jumlah: ${amountStr}`, margin, yPosition);
+        yPosition += 4;
+        pdf.text(`Tipe: ${transaction.type}`, margin, yPosition);
         yPosition += 6;
 
         // Try to add the proof image
