@@ -63,7 +63,14 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
       // Custom header for rekap penerimaan bulan
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('REKAP PENERIMAAN KB SUNAN GIRI', pageWidth / 2, yPosition, { align: 'center' });
+
+      // Determine type from data or default to penerimaan
+      const reportType = data?.type || 'penerimaan';
+      const headerText = reportType === 'pengeluaran'
+        ? 'REKAP PENGELUARAN KB SUNAN GIRI'
+        : 'REKAP PENERIMAAN KB SUNAN GIRI';
+
+      pdf.text(headerText, pageWidth / 2, yPosition, { align: 'center' });
       yPosition += 8;
 
       // Extract month and year from the page
@@ -248,13 +255,13 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
     // Calculate column widths - custom widths for different reports
     let columnWidths: number[] = [];
     if (isRekapPenerimaanBulan) {
-      // Custom widths: No (narrow), Tanggal, Uraian (wide), Debet, Saldo
+      // Custom widths: No (narrow), Tanggal, Uraian (wide), Amount, Saldo
       const totalWidth = pageWidth - 2 * margin;
       columnWidths = [
         totalWidth * 0.05, // No - 5%
         totalWidth * 0.25, // Tanggal - 25%
         totalWidth * 0.36, // Uraian - 36%
-        totalWidth * 0.17, // Debet - 17%
+        totalWidth * 0.17, // Amount (Debet/Credit) - 17%
         totalWidth * 0.17  // Saldo - 17%
       ];
     } else if (isLaporanKeuanganBulanan) {

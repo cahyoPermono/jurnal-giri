@@ -16,13 +16,14 @@ interface ReportRow {
   no: number;
   tanggal: string;
   uraian: string;
-  debet: number;
+  amount: number;
   saldo: number;
 }
 
 interface RekapPenerimaanBulanReport {
   month: number;
   year: number;
+  type: string;
   report: ReportRow[];
 }
 
@@ -47,6 +48,7 @@ export default function RekapPenerimaanBulanReportPage() {
   const [reportData, setReportData] = useState<RekapPenerimaanBulanReport | null>(null);
   const [month, setMonth] = useState<string>("");
   const [year, setYear] = useState<string>("");
+  const [type, setType] = useState<string>("penerimaan");
 
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +70,7 @@ export default function RekapPenerimaanBulanReportPage() {
     const params = new URLSearchParams();
     params.append("month", month);
     params.append("year", year);
+    params.append("type", type);
 
     try {
       const res = await fetch(`/api/reports/rekap-penerimaan-bulan?${params.toString()}`);
@@ -83,7 +86,10 @@ export default function RekapPenerimaanBulanReportPage() {
   };
 
   const handleExportPdf = () => {
-    exportToPdf("rekap-penerimaan-bulan-report", "rekap-penerimaan-bulan-report.pdf");
+    const filename = type === "pengeluaran"
+      ? "rekap-pengeluaran-bulan-report.pdf"
+      : "rekap-penerimaan-bulan-report.pdf";
+    exportToPdf("rekap-penerimaan-bulan-report", filename, { type });
     toast.success("PDF export started!");
   };
 
@@ -91,16 +97,31 @@ export default function RekapPenerimaanBulanReportPage() {
     return <p>Memuat...</p>;
   }
 
+  const columnHeader = type === "pengeluaran" ? "Credit" : "Debet";
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Rekap Penerimaan per Bulan</CardTitle>
-        <CardDescription>Laporan rekapitulasi penerimaan (debet) berdasarkan bulan dan tahun.</CardDescription>
+        <CardTitle>Rekap Penerimaan/Pengeluaran per Bulan</CardTitle>
+        <CardDescription>Laporan rekapitulasi penerimaan/pengeluaran berdasarkan bulan dan tahun.</CardDescription>
       </CardHeader>
       <CardContent id="rekap-penerimaan-bulan-report" className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid gap-2">
+            <Label htmlFor="type">Tipe</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih tipe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="penerimaan">Penerimaan</SelectItem>
+                <SelectItem value="pengeluaran">Pengeluaran</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="month">Bulan</Label>
             <Select value={month} onValueChange={setMonth}>
@@ -133,6 +154,7 @@ export default function RekapPenerimaanBulanReportPage() {
         {reportData && (
           <>
             <div className="mb-4">
+              <p className="text-lg font-medium">Tipe: {type === "penerimaan" ? "Penerimaan" : "Pengeluaran"}</p>
               <p className="text-lg font-medium">Bulan: {monthNames[reportData.month]}</p>
               <p className="text-lg font-medium">Tahun: {reportData.year}</p>
             </div>
@@ -143,7 +165,7 @@ export default function RekapPenerimaanBulanReportPage() {
                   <TableHead>No.</TableHead>
                   <TableHead>Tanggal</TableHead>
                   <TableHead>Uraian</TableHead>
-                  <TableHead>Debet</TableHead>
+                  <TableHead>{columnHeader}</TableHead>
                   <TableHead>Saldo</TableHead>
                 </TableRow>
               </TableHeader>
@@ -153,7 +175,7 @@ export default function RekapPenerimaanBulanReportPage() {
                     <TableCell>{row.no}</TableCell>
                     <TableCell>{row.tanggal}</TableCell>
                     <TableCell>{row.uraian}</TableCell>
-                    <TableCell>{formatCurrency(row.debet)}</TableCell>
+                    <TableCell>{formatCurrency(row.amount)}</TableCell>
                     <TableCell>{formatCurrency(row.saldo)}</TableCell>
                   </TableRow>
                 ))}
@@ -165,7 +187,7 @@ export default function RekapPenerimaanBulanReportPage() {
         )}
 
         {!reportData && !error && (
-          <p className="text-gray-500 text-center">Pilih bulan dan tahun untuk melihat laporan.</p>
+          <p className="text-gray-500 text-center">Pilih tipe, bulan dan tahun untuk melihat laporan.</p>
         )}
       </CardContent>
     </Card>

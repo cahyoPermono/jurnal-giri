@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get("month");
     const year = searchParams.get("year");
+    const type = searchParams.get("type") || "penerimaan"; // Default to penerimaan
 
     if (!month || !year) {
       return new NextResponse("Month and year are required", { status: 400 });
@@ -30,14 +31,17 @@ export async function GET(request: Request) {
     const startDate = new Date(y, m - 1, 1);
     const endDate = new Date(y, m, 0, 23, 59, 59); // Last day of month
 
-    // Fetch debit transactions in the range
+    // Determine transaction type based on user selection
+    const transactionType = type === "pengeluaran" ? TransactionType.CREDIT : TransactionType.DEBIT;
+
+    // Fetch transactions in the range
     const transactions = await prisma.transaction.findMany({
       where: {
         date: {
           gte: startDate,
           lte: endDate,
         },
-        type: TransactionType.DEBIT,
+        type: transactionType,
       },
       select: {
         date: true,
@@ -61,7 +65,7 @@ export async function GET(request: Request) {
           year: 'numeric',
         }),
         uraian: tx.description,
-        debet: tx.amount.toNumber(),
+        amount: tx.amount.toNumber(),
         saldo: runningBalance,
       };
     });
@@ -69,6 +73,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       month: m,
       year: y,
+      type,
       report,
     });
   } catch (error) {

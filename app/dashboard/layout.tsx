@@ -174,7 +174,7 @@ export default function DashboardLayout({
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/rekap-penerimaan-bulan")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/rekap-penerimaan-bulan">
                   <DollarSign className="h-4 w-4" />
-                  Rekap Penerimaan Bulan
+                  Rekap Penerimaan/Pengeluaran Bulan
                 </Link>
               </Button>
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/laporan-keuangan-bulanan")} onClick={handleNavClick}>
