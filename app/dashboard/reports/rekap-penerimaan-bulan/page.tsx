@@ -60,6 +60,11 @@ export default function RekapPenerimaanBulanReportPage() {
     }
   }, [session, status, router]);
 
+  // Clear report data when type changes
+  useEffect(() => {
+    setReportData(null);
+  }, [type]);
+
   const fetchReportData = async () => {
     if (!month || !year) {
       toast.error("Bulan dan tahun harus diisi");
