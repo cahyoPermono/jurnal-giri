@@ -61,39 +61,39 @@ export default function StudentLiabilitiesReportPage() {
   };
 
   const handleExportPdf = () => {
-    exportToPdf("student-liabilities-report", "student-liabilities-report.pdf");
+    exportToPdf("student-liabilities-report", "student-liabilities-report.pdf", reportData);
     toast.success("PDF export started!");
   };
 
   if (status === "loading") {
-    return <p>Loading...</p>;
+    return <p>Memuat...</p>;
   }
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Student Liabilities Report</CardTitle>
-        <CardDescription>Overview of student financial obligations.</CardDescription>
+        <CardTitle>Laporan Hutang Siswa</CardTitle>
+        <CardDescription>Ringkasan kewajiban keuangan siswa.</CardDescription>
       </CardHeader>
       <CardContent id="student-liabilities-report" className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <Button onClick={handleExportPdf} className="mb-4">Export to PDF</Button>
+        <Button onClick={handleExportPdf} className="mb-4">Ekspor ke PDF</Button>
 
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student Name</TableHead>
+                <TableHead>Nama Siswa</TableHead>
                 <TableHead>NIS</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {reportData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="h-24 text-center">
-                    No student liabilities found.
+                    Tidak ada hutang siswa ditemukan.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -105,28 +105,28 @@ export default function StudentLiabilitiesReportPage() {
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm">
-                            View Liabilities
+                            Lihat Hutang
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>Liabilities for {student.name}</DialogTitle>
-                            <DialogDescription>List of unpaid obligations.</DialogDescription>
+                            <DialogTitle>Hutang untuk {student.name}</DialogTitle>
+                            <DialogDescription>Daftar kewajiban yang belum dibayar.</DialogDescription>
                           </DialogHeader>
                           <div className="rounded-md border mt-4">
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead>Type</TableHead>
-                                  <TableHead>Month</TableHead>
-                                  <TableHead>Amount</TableHead>
+                                  <TableHead>Jenis</TableHead>
+                                  <TableHead>Bulan</TableHead>
+                                  <TableHead>Jumlah</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
                                 {student.unpaidItems.length === 0 ? (
                                   <TableRow>
                                     <TableCell colSpan={3} className="h-12 text-center">
-                                      No liabilities for this student.
+                                      Tidak ada hutang untuk siswa ini.
                                     </TableCell>
                                   </TableRow>
                                 ) : (

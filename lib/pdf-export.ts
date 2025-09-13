@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 
-export async function exportToPdf(elementId: string, filename: string) {
+export async function exportToPdf(elementId: string, filename: string, data?: any) {
   const input = document.getElementById(elementId);
   if (!input) {
     console.error("Element not found for PDF export:", elementId);
@@ -132,6 +132,70 @@ export async function exportToPdf(elementId: string, filename: string) {
       }
 
       yPosition += 7;
+    } else if (elementId === 'student-liabilities-report' && data) {
+      // Custom header for student liabilities report
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Laporan Liabiliti Siswa', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 10;
+
+      pdf.setFontSize(14);
+      pdf.text('KB Sunan Giri', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+
+      // List students and their liabilities
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+
+      data.forEach((student: any) => {
+        // Check if we need a new page
+        if (yPosition > pageHeight - 50) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Student name and NIS
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${student.name} (${student.nis})`, margin, yPosition);
+        yPosition += 8;
+
+        // Liabilities
+        pdf.setFont('helvetica', 'normal');
+        if (student.unpaidItems.length === 0) {
+          pdf.text('- Tidak ada hutang', margin + 10, yPosition);
+          yPosition += 8;
+        } else {
+          student.unpaidItems.forEach((item: any) => {
+            const itemText = `- ${item.type}${item.month ? ` (${item.month})` : ''}: Rp ${item.amount.toFixed(2)}`;
+            pdf.text(itemText, margin + 10, yPosition);
+            yPosition += 6;
+          });
+        }
+        yPosition += 10; // Space between students
+      });
+
+      // Add signature section
+      yPosition += 10;
+
+      // Date above signatures
+      const currentDate = new Date();
+      const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
+
+      pdf.setFontSize(10);
+      pdf.text(`Jember, ${formattedDate}`, pageWidth - margin - 60, yPosition);
+
+      // Align titles at the same level
+      const titleY = yPosition + 8;
+      pdf.text('Pengelola KB', margin, titleY);
+      pdf.text('Bendahara', pageWidth - margin - 60, titleY);
+
+      // Place both signatures at the same level
+      const signatureY = titleY + 20;
+      pdf.text('(Zulfa Mazidah, S.Pd.I)', margin, signatureY);
+      pdf.text('(Wiwin Fauziyah, S.sos)', pageWidth - margin - 60, signatureY);
+
+      pdf.save(filename);
+      return;
     } else {
       // Default header for other reports
       const titleElement = input.querySelector('h2') || input.querySelector('h1');
