@@ -91,7 +91,12 @@ export default function NewTransactionPage() {
 
   useEffect(() => {
     // Check if student field should be required based on selected financial account and transaction type
-    if (accountId && type === "DEBIT") {
+    if (type === "CREDIT") {
+      // Hide student field for CREDIT transactions
+      setIsStudentRequired(false);
+      setShouldHideStudentField(true);
+      setStudentId(undefined); // Clear student selection when hiding
+    } else if (accountId && type === "DEBIT") {
       const selectedAccount = financialAccounts.find(account => account.id === accountId);
       if (selectedAccount && (selectedAccount.name === "SPP" || selectedAccount.name === "Pendaftaran")) {
         setIsStudentRequired(true);
@@ -360,12 +365,12 @@ export default function NewTransactionPage() {
               <Input
                 id="proofFile"
                 type="file"
-                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx"
+                accept=".jpg,.jpeg,.png,.gif,.webp"
                 onChange={(e) => setProofFile(e.target.files?.[0] || null)}
                 className="h-10"
               />
               <p className="text-xs text-muted-foreground">
-                Maksimal 1MB. Format yang didukung: JPG, PNG, GIF, WebP, PDF, DOC, DOCX
+                Maksimal 1MB. Format yang didukung: JPG, PNG, GIF, WebP
               </p>
               {proofFile && (
                 <p className="text-xs text-green-600">
