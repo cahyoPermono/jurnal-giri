@@ -49,6 +49,7 @@ export default function NewTransactionPage() {
   const [accountId, setAccountId] = useState<string | undefined>(undefined);
   const [categoryId, setCategoryId] = useState<string | undefined>("none");
   const [studentId, setStudentId] = useState<string | undefined>(undefined);
+  const [proofFile, setProofFile] = useState<File | null>(null);
 
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -143,21 +144,28 @@ export default function NewTransactionPage() {
       return;
     }
 
+    // Validate file size on frontend
+    if (proofFile && proofFile.size > 1024 * 1024) {
+      toast.error("Ukuran file bukti transaksi tidak boleh lebih dari 1MB");
+      return;
+    }
+
     try {
+      const formData = new FormData();
+      formData.append("date", date?.toISOString() || "");
+      formData.append("description", description);
+      formData.append("amount", amount);
+      formData.append("type", type);
+      formData.append("accountId", accountId || "");
+      formData.append("categoryId", categoryId || "none");
+      formData.append("studentId", studentId || "none");
+      if (proofFile) {
+        formData.append("proofFile", proofFile);
+      }
+
       const res = await fetch("/api/transactions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date: date?.toISOString(),
-          description,
-          amount: parseFloat(amount),
-          type,
-          accountId,
-          categoryId: categoryId === "none" ? null : categoryId,
-          studentId: studentId === "none" ? null : studentId, // Handle "none" value
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -170,6 +178,7 @@ export default function NewTransactionPage() {
       setDescription("");
       setAmount("");
       setType("DEBIT");
+      setProofFile(null);
       // Keep accountId, categoryId, studentId as they might be frequently reused
     } catch (err: any) {
       toast.error("Gagal menambahkan transaksi: " + err.message);
@@ -342,6 +351,28 @@ export default function NewTransactionPage() {
                 </Select>
               </div>
             )}
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="proofFile" className="flex items-center text-sm font-medium">
+                <FileTextIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                Bukti Transaksi (Opsional)
+              </Label>
+              <Input
+                id="proofFile"
+                type="file"
+                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx"
+                onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                className="h-10"
+              />
+              <p className="text-xs text-muted-foreground">
+                Maksimal 1MB. Format yang didukung: JPG, PNG, GIF, WebP, PDF, DOC, DOCX
+              </p>
+              {proofFile && (
+                <p className="text-xs text-green-600">
+                  File dipilih: {proofFile.name} ({(proofFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Submit Button */}

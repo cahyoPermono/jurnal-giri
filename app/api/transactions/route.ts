@@ -3,6 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { TransactionType } from "@prisma/client";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { randomUUID } from "crypto";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions) as any;
@@ -12,8 +15,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
-    const { date, description, amount, type, accountId, categoryId, studentId } = body;
+    const formData = await request.formData();
+    const date = formData.get("date") as string;
+    const description = formData.get("description") as string;
+    const amount = formData.get("amount") as string;
+    const type = formData.get("type") as TransactionType;
+    const accountId = formData.get("accountId") as string;
+    const categoryId = formData.get("categoryId") as string;
+    const studentId = formData.get("studentId") as string;
+    const proofFile = formData.get("proofFile") as File | null;
 
     if (!date || !description || !amount || !type || !accountId) {
       return new NextResponse("Missing required fields", { status: 400 });
@@ -28,13 +38,48 @@ export async function POST(request: Request) {
       return new NextResponse("Invalid amount", { status: 400 });
     }
 
+    let proofFilePath: string | null = null;
+
+    // Handle file upload if provided
+    if (proofFile) {
+      // Check file size (1MB limit)
+      if (proofFile.size > 1024 * 1024) {
+        return new NextResponse("File size must be less than 1MB", { status: 400 });
+      }
+
+      // Check file type (allow common image and document types)
+      const allowedTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      if (!allowedTypes.includes(proofFile.type)) {
+        return new NextResponse("Invalid file type. Only images, PDF, and Word documents are allowed", { status: 400 });
+      }
+
+      // Generate unique filename
+      const fileExtension = proofFile.name.split('.').pop();
+      const uniqueFilename = `${randomUUID()}.${fileExtension}`;
+      const uploadDir = join(process.cwd(), 'public', 'uploads');
+
+      // Ensure upload directory exists
+      await mkdir(uploadDir, { recursive: true });
+
+      // Save file
+      const filePath = join(uploadDir, uniqueFilename);
+      const bytes = await proofFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filePath, buffer);
+
+      proofFilePath = `/uploads/${uniqueFilename}`;
+    }
+
     // Start a Prisma transaction to ensure atomicity
     const transactionRecord = await prisma.$transaction(async (tx) => {
       // Fetch related data for denormalization
       const [account, category, student, user] = await Promise.all([
         tx.financialAccount.findUnique({ where: { id: accountId } }),
-        categoryId ? tx.category.findUnique({ where: { id: categoryId } }) : null,
-        studentId ? tx.student.findUnique({ where: { id: studentId } }) : null,
+        categoryId && categoryId !== "none" ? tx.category.findUnique({ where: { id: categoryId } }) : null,
+        studentId && studentId !== "none" ? tx.student.findUnique({ where: { id: studentId } }) : null,
         tx.user.findUnique({ where: { id: session.user.id } })
       ]);
 
@@ -71,8 +116,8 @@ export async function POST(request: Request) {
           amount: parsedAmount,
           type,
           accountId,
-          categoryId: categoryId || null,
-          studentId: studentId || null,
+          categoryId: categoryId && categoryId !== "none" ? categoryId : null,
+          studentId: studentId && studentId !== "none" ? studentId : null,
           userId: session.user.id, // Associate transaction with the logged-in user
           // Denormalized fields for data integrity
           accountName: account.name,
@@ -82,6 +127,8 @@ export async function POST(request: Request) {
           // Balance tracking
           balanceBefore,
           balanceAfter,
+          // Optional proof file
+          proofFile: proofFilePath,
         },
       });
 
@@ -96,6 +143,7 @@ export async function POST(request: Request) {
             accountId: newTransaction.accountId,
             categoryId: newTransaction.categoryId,
             studentId: newTransaction.studentId,
+            proofFile: proofFilePath,
           },
           userId: session.user.id,
         },
