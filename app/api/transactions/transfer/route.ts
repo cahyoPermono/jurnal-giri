@@ -69,7 +69,7 @@ export async function POST(request: Request) {
           date: new Date(date),
           description: `Transfer to ${destinationAccount.name}: ${description}`,
           amount: parsedAmount,
-          type: TransactionType.DEBIT,
+          type: TransactionType.CREDIT,
           accountId: sourceAccountId,
           userId: session.user.id,
           // Denormalized fields for data integrity
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
           date: new Date(date),
           description: `Transfer from ${sourceAccount.name}: ${description}`,
           amount: parsedAmount,
-          type: TransactionType.CREDIT,
+          type: TransactionType.DEBIT,
           accountId: destinationAccountId,
           userId: session.user.id,
           // Denormalized fields for data integrity
