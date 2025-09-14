@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, FileTextIcon, CoinsIcon, TagIcon, WalletIcon, UserIcon, BuildingIcon, AlertTriangleIcon } from "lucide-react";
@@ -66,6 +67,7 @@ export default function NewTransactionPage() {
   const [error, setError] = useState<string | null>(null);
   const [isStudentRequired, setIsStudentRequired] = useState(false);
   const [shouldHideStudentField, setShouldHideStudentField] = useState(false);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -174,6 +176,11 @@ export default function NewTransactionPage() {
       return;
     }
 
+    // Show confirmation dialog instead of submitting directly
+    setShowConfirmationDialog(true);
+  };
+
+  const confirmAddTransaction = async () => {
     try {
       const formData = new FormData();
       formData.append("date", date?.toISOString() || "");
@@ -221,6 +228,9 @@ export default function NewTransactionPage() {
       setLiabilityDescription("");
       setLiabilityNotes("");
       // Keep accountId, categoryId, studentId as they might be frequently reused
+
+      // Close confirmation dialog
+      setShowConfirmationDialog(false);
     } catch (err: any) {
       toast.error("Gagal menambahkan transaksi: " + err.message);
     }
@@ -520,6 +530,107 @@ export default function NewTransactionPage() {
             </Button>
           </div>
         </form>
+
+        {/* Confirmation Dialog */}
+        <Dialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Konfirmasi Transaksi</DialogTitle>
+              <DialogDescription>
+                Silakan periksa kembali detail transaksi sebelum menyimpan.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-muted-foreground">Tanggal:</span>
+                  <p className="font-medium">{date ? format(date, "PPP") : "Tidak ada"}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">Jenis:</span>
+                  <p className="font-medium">{type === "DEBIT" ? "Pemasukan" : "Pengeluaran"}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">Jumlah:</span>
+                  <p className="font-medium text-lg">Rp {parseFloat(amount || "0").toLocaleString("id-ID")}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">Akun:</span>
+                  <p className="font-medium">
+                    {financialAccounts.find(acc => acc.id === accountId)?.name || "Tidak ada"}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <span className="font-medium text-muted-foreground">Deskripsi:</span>
+                <p className="font-medium mt-1">{description || "Tidak ada"}</p>
+              </div>
+
+              {selectedCategory && (
+                <div>
+                  <span className="font-medium text-muted-foreground">Kategori:</span>
+                  <p className="font-medium mt-1">{selectedCategory.name}</p>
+                </div>
+              )}
+
+              {studentId && studentId !== "none" && (
+                <div>
+                  <span className="font-medium text-muted-foreground">Siswa:</span>
+                  <p className="font-medium mt-1">
+                    {students.find(student => student.id === studentId)?.name || "Tidak ada"}
+                  </p>
+                </div>
+              )}
+
+              {proofFile && (
+                <div>
+                  <span className="font-medium text-muted-foreground">Bukti:</span>
+                  <p className="font-medium mt-1">{proofFile.name}</p>
+                </div>
+              )}
+
+              {isLiability && (
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-medium text-orange-600 mb-2">Detail Hutang:</h4>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">Vendor:</span>
+                      <p className="font-medium">{vendorName}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Jatuh Tempo:</span>
+                      <p className="font-medium">{dueDate ? format(dueDate, "PPP") : "Tidak ada"}</p>
+                    </div>
+                    {liabilityDescription && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Deskripsi:</span>
+                        <p className="font-medium">{liabilityDescription}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmationDialog(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={confirmAddTransaction}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CoinsIcon className="mr-2 h-4 w-4" />
+                Konfirmasi & Simpan
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
