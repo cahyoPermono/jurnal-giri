@@ -1,36 +1,88 @@
-Ini adalah proyek [Next.js](https://nextjs.org) yang dibuat dengan [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jurnal Giri
 
-## Memulai
+Aplikasi jurnal keuangan modern yang dibangun untuk membantu mengelola transaksi, hutang, dan laporan keuangan secara efisien.
 
-Pertama, jalankan server pengembangan:
+## ✨ Fitur Utama
 
-```bash
-npm run dev
-# atau
-yarn dev
-# atau
-pnpm dev
-# atau
-bun dev
-```
+- **Autentikasi Pengguna**: Sistem login dengan dua level akses: `ADMIN` dan `OPERATOR`.
+- **Manajemen Transaksi**: Pencatatan transaksi pemasukan (DEBIT) dan pengeluaran (KREDIT).
+- **Manajemen Siswa & Hutang**: Mengelola data siswa dan melacak hutang yang perlu dibayar.
+- **Laporan Keuangan**: Menghasilkan berbagai laporan seperti Laporan Arus Kas, Laba Rugi, dan lainnya.
+- **Pengaturan Dinamis**: Konfigurasi parameter aplikasi seperti biaya SPP melalui antarmuka admin.
+- **Antarmuka Database**: Akses langsung ke database melalui **Adminer** untuk kemudahan pengelolaan data.
 
-Buka [http://localhost:3000](http://localhost:3000) di browser Anda untuk melihat hasilnya.
+## 🛠️ Teknologi yang Digunakan
 
-Anda dapat mulai mengedit halaman dengan memodifikasi `app/page.tsx`. Halaman akan diperbarui secara otomatis saat Anda mengedit file.
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Bahasa**: [TypeScript](https://www.typescriptlang.org/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Autentikasi**: [NextAuth.js](https://next-auth.js.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) dengan [Shadcn/UI](https://ui.shadcn.com/)
+- **Kontainerisasi**: [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+- **UI Database**: [Adminer](https://www.adminer.org/)
 
-Proyek ini menggunakan [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) untuk secara otomatis mengoptimalkan dan memuat [Geist](https://vercel.com/font), keluarga font baru untuk Vercel.
+## 🚀 Memulai Proyek (Lokal)
 
-## Pelajari Lebih Lanjut
+Proyek ini sepenuhnya dikonfigurasi untuk berjalan di dalam kontainer Docker, menyederhanakan proses setup.
 
-Untuk mempelajari lebih lanjut tentang Next.js, lihat sumber daya berikut:
+### Prasyarat
 
-- [Dokumentasi Next.js](https://nextjs.org/docs) - pelajari fitur dan API Next.js.
-- [Pelajari Next.js](https://nextjs.org/learn) - tutorial interaktif Next.js.
+- [Docker](https://www.docker.com/products/docker-desktop/) terinstal di mesin Anda.
 
-Anda dapat melihat [repositori GitHub Next.js](https://github.com/vercel/next.js) - umpan balik dan kontribusi Anda diterima!
+### Langkah-langkah Instalasi
 
-## Deploy di Vercel
+1.  **Clone Repositori**
 
-Cara termudah untuk men-deploy aplikasi Next.js Anda adalah menggunakan [Platform Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) dari pembuat Next.js.
+    ```bash
+    git clone <URL_REPOSITORI_ANDA>
+    cd jurnal-giri
+    ```
 
-Lihat dokumentasi deployment Next.js kami (https://nextjs.org/docs/app/building-your-application/deploying) untuk detail lebih lanjut.
+2.  **Buat File Environment**
+
+    Salin file `.env.example` menjadi `.env`. Variabel default sudah dikonfigurasi untuk lingkungan Docker.
+
+    ```bash
+    cp .env.example .env
+    ```
+
+3.  **Jalankan dengan Docker Compose**
+
+    Perintah ini akan membangun image Docker, membuat kontainer, dan menjalankan semua layanan di latar belakang.
+
+    ```bash
+    docker-compose up -d --build
+    ```
+
+    Proses ini mungkin memakan waktu beberapa menit saat pertama kali dijalankan karena perlu mengunduh image dan menginstal dependensi.
+
+## 🌐 Layanan yang Berjalan
+
+Setelah `docker-compose up` berhasil, layanan berikut akan tersedia:
+
+- **Aplikasi Jurnal Giri**: [http://localhost:3000](http://localhost:3000)
+- **Antarmuka Database (Adminer)**: [http://localhost:8080](http://localhost:8080)
+- **Koneksi Langsung ke Database**: Port `5433` di `localhost` (untuk dihubungkan via tool database eksternal).
+
+## 👤 Akun Default
+
+Proses setup secara otomatis membuat dua pengguna default di database:
+
+- **Admin**
+  - **Username**: `admin@jurnalgiri.com`
+  - **Password**: `passwordgiri`
+
+- **Operator**
+  - **Username**: `operator@girifinancials.com`
+  - **Password**: `password`
+
+## 🗃️ Login ke Adminer
+
+Untuk mengakses database melalui Adminer, gunakan kredensial berikut di halaman login [http://localhost:8080](http://localhost:8080):
+
+- **System**: `PostgreSQL`
+- **Server**: `db` (ini adalah nama host internal Docker)
+- **Username**: `admin`
+- **Password**: `password`
+- **Database**: `girifinancials`
