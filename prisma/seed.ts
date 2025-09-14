@@ -31,11 +31,11 @@ async function main() {
   });
 
   const accounts = [
-    { name: "Pendaftaran" },
-    { name: "SPP" },
-    { name: "Kegiatan" },
-    { name: "Lain-lain" },
-    { name: "Bank" },
+    { name: "Pendaftaran", isBank: false },
+    { name: "SPP", isBank: false },
+    { name: "Kegiatan", isBank: false },
+    { name: "Lain-lain", isBank: false },
+    { name: "Bank", isBank: true },
   ];
 
   for (const account of accounts) {

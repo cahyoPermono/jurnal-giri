@@ -14,11 +14,14 @@ export async function GET(request: Request) {
   try {
     // Total balance and individual account balances
     const financialAccounts = await prisma.financialAccount.findMany({
-      select: { id: true, name: true, balance: true },
+      select: { id: true, name: true, balance: true, isBank: true },
       orderBy: { name: "asc" },
     });
 
-    const totalBalance = financialAccounts.reduce((sum, account) => sum + account.balance.toNumber(), 0);
+    // Calculate total balance excluding bank accounts
+    const totalBalance = financialAccounts
+      .filter(account => !account.isBank)
+      .reduce((sum, account) => sum + account.balance.toNumber(), 0);
 
     // Monthly Debit vs. Credit for graph
     const today = new Date();

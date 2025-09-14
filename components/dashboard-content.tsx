@@ -21,6 +21,7 @@ interface FinancialAccount {
   id: string;
   name: string;
   balance: number;
+  isBank: boolean;
 }
 
 interface Student {

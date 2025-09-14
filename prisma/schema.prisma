@@ -73,6 +73,7 @@ model FinancialAccount {
   id           String        @id @default(cuid())
   name         String        @unique
   balance      Decimal       @default(0.0)
+  isBank       Boolean       @default(false)
   transactions Transaction[]
   categories   Category[]    // New field
   createdAt    DateTime      @default(now())
