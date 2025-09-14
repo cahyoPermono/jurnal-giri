@@ -216,18 +216,21 @@ export default function NewTransactionPage() {
 
       toast.success(isLiability ? "Hutang berhasil dicatat!" : "Transaksi berhasil ditambahkan!");
 
-      // Reset form
+      // Reset form to initial values
       setDate(new Date());
       setDescription("");
       setAmount("");
       setType("DEBIT");
+      setAccountId(financialAccounts.length > 0 ? financialAccounts[0].id : undefined);
+      setCategoryId("none");
+      setStudentId(undefined);
       setProofFile(null);
       setIsLiability(false);
       setVendorName("");
       setDueDate(undefined);
       setLiabilityDescription("");
       setLiabilityNotes("");
-      // Keep accountId, categoryId, studentId as they might be frequently reused
+      setSelectedCategory(null);
 
       // Close confirmation dialog
       setShowConfirmationDialog(false);
