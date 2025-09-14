@@ -51,12 +51,26 @@ export default function DashboardContent() {
   const [unpaidStudents, setUnpaidStudents] = useState<Student[]>([]);
   const [unpaidRegistrationStudents, setUnpaidRegistrationStudents] = useState<Student[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [networkInfo, setNetworkInfo] = useState<{ip: string, port: string} | null>(null);
 
   useEffect(() => {
     fetchDashboardSummary();
     fetchUnpaidStudents();
     fetchUnpaidRegistrationStudents();
+    fetchNetworkInfo();
   }, []);
+
+  const fetchNetworkInfo = async () => {
+    try {
+      const res = await fetch('/api/network-ip');
+      if (res.ok) {
+        const data = await res.json();
+        setNetworkInfo(data);
+      }
+    } catch (err) {
+      console.error('Error fetching network info:', err);
+    }
+  };
 
   const fetchDashboardSummary = async () => {
     try {
@@ -186,6 +200,44 @@ export default function DashboardContent() {
 
   return (
     <div className="space-y-6">
+
+      {/* Network Access Information */}
+      {networkInfo && (
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <div className="p-1.5 bg-blue-100 rounded-full">
+                <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0 9c-1.657 0-3-4.03-3-9s1.343-9 3-9m0 18c1.657 0 3-4.03 3-9s-1.343-9-3-9" />
+                </svg>
+              </div>
+              Akses dari Jaringan
+            </CardTitle>
+            <CardDescription className="text-blue-600">
+              Bagikan URL ini agar device lain di jaringan yang sama dapat mengakses aplikasi
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-white/80 p-4 rounded-lg border border-blue-200/50">
+              <p className="text-sm text-gray-700 mb-2">URL untuk akses jaringan:</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-sm font-mono text-gray-800 border">
+                  http://{networkInfo.ip}:{networkInfo.port}
+                </code>
+                <button
+                  onClick={() => navigator.clipboard.writeText(`http://${networkInfo.ip}:${networkInfo.port}`)}
+                  className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                >
+                  Salin
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Pastikan firewall tidak memblokir port {networkInfo.port}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Unpaid Students Alert */}
       {unpaidStudents.length > 0 && (
