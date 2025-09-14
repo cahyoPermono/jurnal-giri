@@ -35,6 +35,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
+COPY --from=builder /app/prisma/migrations ./prisma/migrations
 # Copy the compiled seed script
 COPY --from=builder /app/dist/seed.js ./prisma/seed.js
 
