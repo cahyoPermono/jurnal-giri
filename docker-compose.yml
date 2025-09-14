@@ -28,7 +28,7 @@ services:
       DATABASE_URL: "postgresql://admin:password@db:5432/girifinancials"
       NEXTAUTH_URL: "http://localhost:3000"
       NEXTAUTH_SECRET: "somesecret"
-    command: sh -c "npx prisma migrate deploy && node prisma/seed.js && node server.js"
+    
 
   adminer:
     image: adminer

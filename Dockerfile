@@ -24,6 +24,10 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
+# Copy the entrypoint script and make it executable
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -39,7 +43,7 @@ COPY --from=builder /app/node_modules ./node_modules
 
 # Set the correct permission for prerender cache
 RUN mkdir -p .next
-RUN chown -R nextjs:nodejs .next
+RUN chown -R nextjs:nodejs .
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -49,3 +53,6 @@ USER nextjs
 
 EXPOSE 3000
 ENV PORT 3000
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["node", "server.js"]
