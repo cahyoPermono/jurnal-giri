@@ -86,7 +86,17 @@ export async function PUT(request: Request) {
       return new NextResponse("Invalid transaction type", { status: 400 });
     }
 
-    const oldCategory = await prisma.category.findUnique({ where: { id } });
+    // Check if category is protected
+    const existingCategory = await prisma.category.findUnique({ where: { id } });
+    if (!existingCategory) {
+      return new NextResponse("Category not found", { status: 404 });
+    }
+
+    if (existingCategory.isProtected) {
+      return new NextResponse("Cannot modify protected system category", { status: 403 });
+    }
+
+    const oldCategory = existingCategory;
 
     const updatedCategory = await prisma.category.update({
       where: { id },
@@ -125,6 +135,16 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return new NextResponse("Missing category ID", { status: 400 });
+    }
+
+    // Check if category is protected
+    const existingCategory = await prisma.category.findUnique({ where: { id } });
+    if (!existingCategory) {
+      return new NextResponse("Category not found", { status: 404 });
+    }
+
+    if (existingCategory.isProtected) {
+      return new NextResponse("Cannot delete protected system category", { status: 403 });
     }
 
     const deletedCategory = await prisma.category.delete({

@@ -90,6 +90,7 @@ model Category {
   id                 String           @id @default(cuid())
   name               String           @unique
   type               TransactionType
+  isProtected        Boolean          @default(false)
   financialAccount   FinancialAccount? @relation(fields: [financialAccountId], references: [id])
   financialAccountId String?          @map("financial_account_id") // Add this line
   transactions       Transaction[]

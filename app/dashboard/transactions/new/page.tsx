@@ -99,7 +99,7 @@ export default function NewTransactionPage() {
   }, [date]);
 
   useEffect(() => {
-    // Check if student field should be required based on selected financial account and transaction type
+    // Check if student field should be required based on selected financial account, category and transaction type
     if (type === "CREDIT") {
       // Hide student field for CREDIT transactions
       setIsStudentRequired(false);
@@ -107,7 +107,17 @@ export default function NewTransactionPage() {
       setStudentId(undefined); // Clear student selection when hiding
     } else if (accountId && type === "DEBIT") {
       const selectedAccount = financialAccounts.find(account => account.id === accountId);
-      if (selectedAccount && (selectedAccount.name === "SPP" || selectedAccount.name === "Pendaftaran")) {
+      const selectedCategory = categories.find(category => category.id === categoryId);
+
+      // Show student field if:
+      // 1. Account is "SPP" or "Pendaftaran" (existing logic)
+      // 2. Account is "Bank" and category is "SPP Bank" or "Pendaftaran Bank" (new logic)
+      const isStudentPayment =
+        (selectedAccount && (selectedAccount.name === "SPP" || selectedAccount.name === "Pendaftaran")) ||
+        (selectedAccount && selectedAccount.name === "Bank" &&
+         selectedCategory && (selectedCategory.name === "SPP Bank" || selectedCategory.name === "Pendaftaran Bank"));
+
+      if (isStudentPayment) {
         setIsStudentRequired(true);
         setShouldHideStudentField(false);
       } else {
@@ -119,7 +129,7 @@ export default function NewTransactionPage() {
       setIsStudentRequired(false);
       setShouldHideStudentField(false);
     }
-  }, [accountId, financialAccounts, type]);
+  }, [accountId, categoryId, financialAccounts, categories, type]);
 
   useEffect(() => {
     // Reset liability states when type changes to DEBIT (since debit transactions can't be liabilities)
@@ -165,7 +175,7 @@ export default function NewTransactionPage() {
 
     // Validate required student field
     if (isStudentRequired && (!studentId || studentId === "none")) {
-      toast.error("Siswa wajib diisi ketika Akun Keuangan adalah SPP atau Pendaftaran");
+      toast.error("Siswa wajib diisi untuk transaksi pembayaran siswa");
       return;
     }
 

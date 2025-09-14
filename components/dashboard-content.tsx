@@ -103,26 +103,38 @@ export default function DashboardContent() {
         a.name.toLowerCase().includes("sumbangan")
       );
 
-      if (!sppAccount) {
-        setUnpaidStudents([]);
-        return;
-      }
+      const bankAccount = accounts.find((a: any) => a.name === "Bank");
 
       // Get current month
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-      // Fetch transactions with DEBIT type for SPP account
-      const transRes = await fetch(
-        `/api/transactions?accountId=${sppAccount.id}&type=DEBIT&startDate=${startOfMonth.toISOString()}&endDate=${endOfMonth.toISOString()}`
-      );
-      if (!transRes.ok) throw new Error("Failed to fetch transactions");
-      const transactions = await transRes.json();
+      const paidStudentIds = new Set();
 
-      const paidStudentIds = new Set(
-        transactions.filter((t: any) => t.studentId).map((t: any) => t.studentId)
-      );
+      // Check SPP account transactions
+      if (sppAccount) {
+        const sppTransRes = await fetch(
+          `/api/transactions?accountId=${sppAccount.id}&type=DEBIT&startDate=${startOfMonth.toISOString()}&endDate=${endOfMonth.toISOString()}`
+        );
+        if (sppTransRes.ok) {
+          const sppTransactions = await sppTransRes.json();
+          sppTransactions.filter((t: any) => t.studentId).forEach((t: any) => paidStudentIds.add(t.studentId));
+        }
+      }
+
+      // Check bank account transactions with SPP Bank category
+      if (bankAccount) {
+        const bankSppTransRes = await fetch(
+          `/api/transactions?accountId=${bankAccount.id}&type=DEBIT&startDate=${startOfMonth.toISOString()}&endDate=${endOfMonth.toISOString()}`
+        );
+        if (bankSppTransRes.ok) {
+          const bankTransactions = await bankSppTransRes.json();
+          bankTransactions
+            .filter((t: any) => t.studentId && t.categoryName === "SPP Bank")
+            .forEach((t: any) => paidStudentIds.add(t.studentId));
+        }
+      }
 
       const unpaid = students.filter((s: Student) => s.active && !paidStudentIds.has(s.id));
       setUnpaidStudents(unpaid);
@@ -149,21 +161,33 @@ export default function DashboardContent() {
         a.name.toLowerCase().includes("daftar")
       );
 
-      if (!registrationAccount) {
-        setUnpaidRegistrationStudents([]);
-        return;
+      const bankAccount = accounts.find((a: any) => a.name === "Bank");
+
+      const paidStudentIds = new Set();
+
+      // Check registration account transactions
+      if (registrationAccount) {
+        const regTransRes = await fetch(
+          `/api/transactions?accountId=${registrationAccount.id}&type=DEBIT`
+        );
+        if (regTransRes.ok) {
+          const regTransactions = await regTransRes.json();
+          regTransactions.filter((t: any) => t.studentId).forEach((t: any) => paidStudentIds.add(t.studentId));
+        }
       }
 
-      // Fetch all transactions with DEBIT type for registration account
-      const transRes = await fetch(
-        `/api/transactions?accountId=${registrationAccount.id}&type=DEBIT`
-      );
-      if (!transRes.ok) throw new Error("Failed to fetch transactions");
-      const transactions = await transRes.json();
-
-      const paidStudentIds = new Set(
-        transactions.filter((t: any) => t.studentId).map((t: any) => t.studentId)
-      );
+      // Check bank account transactions with Pendaftaran Bank category
+      if (bankAccount) {
+        const bankRegTransRes = await fetch(
+          `/api/transactions?accountId=${bankAccount.id}&type=DEBIT`
+        );
+        if (bankRegTransRes.ok) {
+          const bankTransactions = await bankRegTransRes.json();
+          bankTransactions
+            .filter((t: any) => t.studentId && t.categoryName === "Pendaftaran Bank")
+            .forEach((t: any) => paidStudentIds.add(t.studentId));
+        }
+      }
 
       const unpaid = students.filter((s: Student) => s.active && !paidStudentIds.has(s.id));
       setUnpaidRegistrationStudents(unpaid);

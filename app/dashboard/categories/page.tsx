@@ -16,6 +16,7 @@ interface Category {
   id: string;
   name: string;
   type: "DEBIT" | "CREDIT" | "TRANSFER";
+  isProtected: boolean;
   financialAccountId: string | null; // New field
   financialAccount?: { // New field for relation
     id: string;
@@ -248,30 +249,36 @@ export default function ManageCategoriesPage() {
                       <TableCell>{category.financialAccount?.name || "N/A"}</TableCell>
                       <TableCell>{new Date(category.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                          <Button variant="outline" size="sm" onClick={() => setEditingCategory(category)}>
-                            Edit
-                          </Button>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
-                                Hapus
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Apakah Anda yakin?</DialogTitle>
-                                <DialogDescription>
-                                  Tindakan ini tidak dapat dibatalkan. Ini akan menghapus catatan kategori secara permanen.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter>
-                                <Button variant="outline" onClick={() => { /* Close dialog */ }}>Batal</Button>
-                                <Button variant="destructive" onClick={() => handleDeleteCategory(category.id)}>Hapus</Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
+                        {category.isProtected ? (
+                          <span className="text-sm text-muted-foreground flex items-center justify-end">
+                            🔒 Sistem
+                          </span>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                            <Button variant="outline" size="sm" onClick={() => setEditingCategory(category)}>
+                              Edit
+                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                  Hapus
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Apakah Anda yakin?</DialogTitle>
+                                  <DialogDescription>
+                                    Tindakan ini tidak dapat dibatalkan. Ini akan menghapus catatan kategori secara permanen.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                  <Button variant="outline" onClick={() => { /* Close dialog */ }}>Batal</Button>
+                                  <Button variant="destructive" onClick={() => handleDeleteCategory(category.id)}>Hapus</Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

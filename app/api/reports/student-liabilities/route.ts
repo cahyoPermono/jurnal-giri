@@ -31,6 +31,7 @@ export async function GET(request: Request) {
           },
           include: {
             account: true,
+            category: true,
           },
           orderBy: { date: "asc" },
         },
@@ -52,7 +53,10 @@ export async function GET(request: Request) {
       const unpaidItems: { type: string; month?: string; amount: number }[] = [];
 
       // Check registration payment
-      const registrationPaid = student.transactions.some(tx => tx.account.name === 'Pendaftaran');
+      const registrationPaid = student.transactions.some(tx =>
+        tx.account.name === 'Pendaftaran' ||
+        (tx.account.name === 'Bank' && tx.category?.name === 'Pendaftaran Bank')
+      );
       if (!registrationPaid) {
         unpaidItems.push({ type: 'Registration', amount: REGISTRATION_FEE });
       }
@@ -62,9 +66,13 @@ export async function GET(request: Request) {
         const paymentDate = new Date(enrollmentYear, enrollmentMonth + i, 1);
         const monthName = paymentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
         const sppPaid = student.transactions.some(tx =>
-          tx.account.name === 'SPP' &&
-          tx.date.getMonth() === paymentDate.getMonth() &&
-          tx.date.getFullYear() === paymentDate.getFullYear()
+          (tx.account.name === 'SPP' &&
+           tx.date.getMonth() === paymentDate.getMonth() &&
+           tx.date.getFullYear() === paymentDate.getFullYear()) ||
+          (tx.account.name === 'Bank' &&
+           tx.category?.name === 'SPP Bank' &&
+           tx.date.getMonth() === paymentDate.getMonth() &&
+           tx.date.getFullYear() === paymentDate.getFullYear())
         );
         if (!sppPaid) {
           unpaidItems.push({ type: 'SPP', month: monthName, amount: MONTHLY_SPP_FEE });

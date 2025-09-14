@@ -55,6 +55,8 @@ async function main() {
     { name: "Rutin", type: "CREDIT" as const, financialAccountId: sppAccount?.id },
     { name: "Kegiatan", type: "CREDIT" as const, financialAccountId: kegiatanAccount?.id },
     { name: "Setor bank", type: "CREDIT" as const, financialAccountId: bankAccount?.id },
+    { name: "SPP Bank", type: "DEBIT" as const, financialAccountId: bankAccount?.id, isProtected: true },
+    { name: "Pendaftaran Bank", type: "DEBIT" as const, financialAccountId: bankAccount?.id, isProtected: true },
   ];
 
   for (const category of categories) {
