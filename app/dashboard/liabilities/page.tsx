@@ -41,6 +41,7 @@ export default function LiabilitiesPage() {
   const router = useRouter();
 
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
+  const [summary, setSummary] = useState({ pending: 0, overdue: 0, total: 0 });
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<string | undefined>("all");
@@ -48,6 +49,35 @@ export default function LiabilitiesPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      const fetchSummaryData = async () => {
+        try {
+          const res = await fetch('/api/liabilities'); // Fetch all liabilities
+          if (!res.ok) {
+            console.error('Failed to fetch summary data');
+            return;
+          }
+          const allLiabilities: Liability[] = await res.json();
+          const totalPending = allLiabilities
+            .filter(l => l.status === "PENDING")
+            .reduce((sum, l) => sum + l.amount, 0);
+          const totalOverdue = allLiabilities
+            .filter(l => l.status === "OVERDUE")
+            .reduce((sum, l) => sum + l.amount, 0);
+          setSummary({
+            pending: totalPending,
+            overdue: totalOverdue,
+            total: allLiabilities.length,
+          });
+        } catch (err) {
+          console.error("Failed to fetch summary:", err);
+        }
+      };
+      fetchSummaryData();
+    }
+  }, [status]);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -184,14 +214,6 @@ export default function LiabilitiesPage() {
     }
   };
 
-  const totalPending = liabilities
-    .filter(l => l.status === "PENDING")
-    .reduce((sum, l) => sum + l.amount, 0);
-
-  const totalOverdue = liabilities
-    .filter(l => l.status === "OVERDUE")
-    .reduce((sum, l) => sum + l.amount, 0);
-
   return (
     <div className="space-y-6">
       <Card>
@@ -208,7 +230,7 @@ export default function LiabilitiesPage() {
                   <ClockIcon className="h-5 w-5 text-yellow-600" />
                   <div>
                     <p className="text-sm font-medium text-gray-600">Hutang Pending</p>
-                    <p className="text-2xl font-bold text-yellow-800">{formatCurrency(totalPending)}</p>
+                    <p className="text-2xl font-bold text-yellow-800">{formatCurrency(summary.pending)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -220,7 +242,7 @@ export default function LiabilitiesPage() {
                   <AlertTriangleIcon className="h-5 w-5 text-red-600" />
                   <div>
                     <p className="text-sm font-medium text-gray-600">Hutang Overdue</p>
-                    <p className="text-2xl font-bold text-red-800">{formatCurrency(totalOverdue)}</p>
+                    <p className="text-2xl font-bold text-red-800">{formatCurrency(summary.overdue)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -233,7 +255,7 @@ export default function LiabilitiesPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Hutang</p>
                     <p className="text-2xl font-bold text-gray-800">
-                      {liabilities.length} item{liabilities.length !== 1 ? 's' : ''}
+                      {summary.total} item{summary.total !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
