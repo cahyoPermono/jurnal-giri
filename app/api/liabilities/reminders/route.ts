@@ -130,8 +130,8 @@ export async function POST(request: Request) {
           upcomingCount: reminders.upcoming.length,
           overdueCount: reminders.overdue.length,
           totalAmount: {
-            upcoming: reminders.upcoming.reduce((sum, l) => sum + l.amount, 0),
-            overdue: reminders.overdue.reduce((sum, l) => sum + l.amount, 0),
+            upcoming: reminders.upcoming.reduce((sum, l) => sum + l.amount.toNumber(), 0),
+            overdue: reminders.overdue.reduce((sum, l) => sum + l.amount.toNumber(), 0),
           },
         },
         userId: session.user.id,
