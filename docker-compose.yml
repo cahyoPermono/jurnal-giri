@@ -28,6 +28,7 @@ services:
       DATABASE_URL: "postgresql://admin:password@db:5432/girifinancials"
       NEXTAUTH_URL: "http://localhost:3000"
       NEXTAUTH_SECRET: "somesecret" # In a real production environment, use a more secure secret
+    command: sh -c "npx prisma migrate deploy && node server.js"
 
 volumes:
   postgres_data:
