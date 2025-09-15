@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, BuildingIcon, AlertTriangleIcon, CheckCircleIcon, ClockIcon, BellIcon, CreditCardIcon, DollarSignIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Liability {
   id: string;
@@ -52,6 +53,13 @@ export default function LiabilitiesPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Dialog states
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedLiability, setSelectedLiability] = useState<Liability | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDescription, setPaymentDescription] = useState("");
+  const [isFullPaymentMode, setIsFullPaymentMode] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -181,8 +189,30 @@ export default function LiabilitiesPage() {
     }
   };
 
-  const payLiability = async (liability: Liability) => {
-    if (!confirm(`Apakah Anda yakin ingin membayar hutang ke ${liability.vendorName} sebesar ${formatCurrency(liability.amount)}?`)) {
+
+
+  const openPaymentDialog = (liability: Liability, isFullPayment: boolean = false) => {
+    setSelectedLiability(liability);
+    setIsFullPaymentMode(isFullPayment);
+    setPaymentAmount(isFullPayment ? liability.remainingAmount.toString() : "");
+    setPaymentDescription(isFullPayment
+      ? `Pembayaran lunas hutang ke ${liability.vendorName}`
+      : `Pembayaran cicil hutang ke ${liability.vendorName}`
+    );
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentSubmit = async () => {
+    if (!selectedLiability) return;
+
+    const amount = parseFloat(paymentAmount.replace(/[^\d]/g, ''));
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Jumlah pembayaran tidak valid");
+      return;
+    }
+
+    if (amount > selectedLiability.remainingAmount) {
+      toast.error(`Jumlah pembayaran melebihi sisa hutang (${formatCurrency(selectedLiability.remainingAmount)})`);
       return;
     }
 
@@ -194,10 +224,10 @@ export default function LiabilitiesPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          liabilityId: liability.id,
-          description: `Pembayaran hutang ke ${liability.vendorName}`,
-          amount: liability.amount,
-          isFullPayment: true,
+          liabilityId: selectedLiability.id,
+          description: paymentDescription,
+          amount: amount,
+          isFullPayment: isFullPaymentMode,
         }),
       });
 
@@ -207,10 +237,17 @@ export default function LiabilitiesPage() {
       }
 
       const data = await res.json();
-      toast.success(`Hutang ke ${liability.vendorName} berhasil dibayar!`);
+      toast.success(isFullPaymentMode
+        ? `Hutang ke ${selectedLiability.vendorName} berhasil dilunasi!`
+        : `Pembayaran cicil sebesar ${formatCurrency(amount)} berhasil!`
+      );
 
-      // Refresh liabilities to show updated status
-      await fetchLiabilities();
+      // Close dialog and refresh data
+      setPaymentDialogOpen(false);
+      setSelectedLiability(null);
+      setPaymentAmount("");
+      setPaymentDescription("");
+      fetchLiabilities();
     } catch (err: any) {
       toast.error("Failed to pay liability: " + err.message);
     } finally {
@@ -218,52 +255,12 @@ export default function LiabilitiesPage() {
     }
   };
 
-  const payPartialLiability = async (liability: Liability) => {
-    const partialAmount = prompt(`Masukkan jumlah pembayaran cicil untuk ${liability.vendorName} (Maksimal: ${formatCurrency(liability.remainingAmount)}):`);
+  const payPartialLiability = (liability: Liability) => {
+    openPaymentDialog(liability, false);
+  };
 
-    if (!partialAmount) return;
-
-    const amount = parseFloat(partialAmount.replace(/[^\d]/g, ''));
-    if (isNaN(amount) || amount <= 0) {
-      toast.error("Jumlah pembayaran tidak valid");
-      return;
-    }
-
-    if (amount > liability.remainingAmount) {
-      toast.error(`Jumlah pembayaran melebihi sisa hutang (${formatCurrency(liability.remainingAmount)})`);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const res = await fetch('/api/liabilities/pay', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          liabilityId: liability.id,
-          description: `Pembayaran cicil hutang ke ${liability.vendorName}`,
-          amount: amount,
-          isFullPayment: false,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to pay liability');
-      }
-
-      const data = await res.json();
-      toast.success(`Pembayaran cicil sebesar ${formatCurrency(amount)} berhasil!`);
-
-      // Refresh liabilities to show updated status
-      await fetchLiabilities();
-    } catch (err: any) {
-      toast.error("Failed to pay liability: " + err.message);
-    } finally {
-      setIsLoading(false);
-    }
+  const payLiability = (liability: Liability) => {
+    openPaymentDialog(liability, true);
   };
 
   return (
@@ -548,6 +545,73 @@ export default function LiabilitiesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {isFullPaymentMode ? "Bayar Lunas Hutang" : "Bayar Cicil Hutang"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedLiability && (
+                <div className="space-y-2">
+                  <p><strong>Vendor:</strong> {selectedLiability.vendorName}</p>
+                  <p><strong>Total Hutang:</strong> {formatCurrency(selectedLiability.amount)}</p>
+                  <p><strong>Sudah Dibayar:</strong> {formatCurrency(selectedLiability.paidAmount)}</p>
+                  <p><strong>Sisa Hutang:</strong> {formatCurrency(selectedLiability.remainingAmount)}</p>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="paymentAmount">Jumlah Pembayaran</Label>
+              <Input
+                id="paymentAmount"
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder="Masukkan jumlah pembayaran"
+                disabled={isFullPaymentMode}
+              />
+              {!isFullPaymentMode && selectedLiability && (
+                <p className="text-sm text-gray-500">
+                  Maksimal: {formatCurrency(selectedLiability.remainingAmount)}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="paymentDescription">Deskripsi Pembayaran</Label>
+              <Input
+                id="paymentDescription"
+                value={paymentDescription}
+                onChange={(e) => setPaymentDescription(e.target.value)}
+                placeholder="Deskripsi pembayaran"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPaymentDialogOpen(false)}
+              disabled={isLoading}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handlePaymentSubmit}
+              disabled={isLoading || !paymentAmount || !paymentDescription}
+              className={isFullPaymentMode ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}
+            >
+              {isLoading ? "Memproses..." : (isFullPaymentMode ? "Bayar Lunas" : "Bayar Cicil")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
