@@ -22,6 +22,7 @@ interface Liability {
   amount: number;
   dueDate: string;
   status: "PENDING" | "PAID" | "OVERDUE";
+  type: "DEBIT" | "CREDIT";
   description?: string;
   notes?: string;
   transaction?: {
@@ -365,6 +366,7 @@ export default function LiabilitiesPage() {
                 <TableRow>
                   <TableHead>Vendor</TableHead>
                   <TableHead>Jumlah</TableHead>
+                  <TableHead>Tipe</TableHead>
                   <TableHead>Jatuh Tempo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Deskripsi</TableHead>
@@ -376,13 +378,13 @@ export default function LiabilitiesPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                       Memuat...
                     </TableCell>
                   </TableRow>
                 ) : liabilities.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                       Tidak ada hutang ditemukan.
                     </TableCell>
                   </TableRow>
@@ -397,6 +399,16 @@ export default function LiabilitiesPage() {
                       </TableCell>
                       <TableCell className="font-medium">
                         {formatCurrency(liability.amount)}
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-medium",
+                          liability.type === "DEBIT"
+                            ? "text-green-800 bg-green-100"
+                            : "text-red-800 bg-red-100"
+                        )}>
+                          {liability.type === "DEBIT" ? "Pemasukan" : "Pengeluaran"}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {new Date(liability.dueDate).toLocaleDateString('id-ID')}

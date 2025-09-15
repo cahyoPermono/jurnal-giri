@@ -40,21 +40,57 @@ export async function POST(request: Request) {
         throw new Error("Liability is already paid");
       }
 
-      // For liabilities created without transactions, we need to get account info from the request
-      // Since we don't have original transaction, we'll use default account or ask for it
-      // For now, let's assume we use the first available account or we can modify the API to accept accountId
+      // Get the account from the original transaction if it exists, otherwise from liability
+      let currentAccount;
+      if (liability.transaction) {
+        // Use the same account as the original transaction
+        currentAccount = await tx.financialAccount.findUnique({
+          where: { id: liability.transaction.accountId },
+        });
+      } else if (liability.accountId) {
+        // Use the account stored in liability (for CREDIT liabilities)
+        currentAccount = await tx.financialAccount.findUnique({
+          where: { id: liability.accountId },
+        });
+      } else {
+        // Fallback: use default account
+        currentAccount = await tx.financialAccount.findFirst();
+      }
 
-      // Get the first available financial account as default
-      const currentAccount = await tx.financialAccount.findFirst();
       if (!currentAccount) {
         throw new Error("No financial account found");
       }
 
-      const balanceBefore = currentAccount.balance;
-      let balanceAfter = currentAccount.balance;
+      // Get the current balance from database to ensure accuracy
+      const accountWithBalance = await tx.financialAccount.findUnique({
+        where: { id: currentAccount.id },
+        select: { balance: true }
+      });
 
-      // For payment, we use CREDIT (decrease in cash/bank)
-      balanceAfter = balanceAfter.minus(parsedAmount);
+      if (!accountWithBalance) {
+        throw new Error("Could not retrieve account balance");
+      }
+
+      const balanceBefore = accountWithBalance.balance;
+
+      // Determine transaction type based on liability type
+      let transactionType: TransactionType;
+      let balanceAfter;
+
+      if (liability.type === TransactionType.DEBIT) {
+        // For DEBIT liability payment: borrower pays back (money comes in) → DEBIT transaction
+        transactionType = TransactionType.DEBIT;
+        balanceAfter = balanceBefore.add(parsedAmount); // Use add() instead of plus()
+      } else {
+        // For CREDIT liability payment: we pay back what we borrowed (money goes out) → CREDIT transaction
+        transactionType = TransactionType.CREDIT;
+        balanceAfter = balanceBefore.sub(parsedAmount); // Use sub() instead of minus()
+      }
+
+      // Ensure balanceAfter is a valid Decimal
+      if (typeof balanceAfter !== 'object' || !balanceAfter) {
+        throw new Error("Invalid balance calculation result");
+      }
 
       // Create payment transaction
       const paymentTransaction = await tx.transaction.create({
@@ -62,7 +98,7 @@ export async function POST(request: Request) {
           date: new Date(),
           description,
           amount: parsedAmount,
-          type: TransactionType.CREDIT, // Payment decreases cash/bank balance
+          type: transactionType,
           accountId: currentAccount.id, // Use default account
           userId: session.user.id,
           // Denormalized fields for data integrity

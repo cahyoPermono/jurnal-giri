@@ -76,6 +76,7 @@ model FinancialAccount {
   isBank       Boolean       @default(false)
   transactions Transaction[]
   categories   Category[]    // New field
+  liabilities  Liability[]   // Relasi ke liabilities
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -180,6 +181,7 @@ model Liability {
   amount      Decimal
   dueDate     DateTime        // Tanggal jatuh tempo
   status      LiabilityStatus @default(PENDING)
+  type        TransactionType @default(CREDIT) // Tipe hutang: DEBIT atau CREDIT
   description String?         // Deskripsi hutang
   notes       String?         // Catatan tambahan
 
@@ -190,6 +192,10 @@ model Liability {
   // Relasi ke user yang mencatat
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  // Akun keuangan yang digunakan (untuk hutang CREDIT yang tidak punya transaksi)
+  accountId String?
+  account   FinancialAccount? @relation(fields: [accountId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

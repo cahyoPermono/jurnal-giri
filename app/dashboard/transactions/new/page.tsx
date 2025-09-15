@@ -131,16 +131,7 @@ export default function NewTransactionPage() {
     }
   }, [accountId, categoryId, financialAccounts, categories, type]);
 
-  useEffect(() => {
-    // Reset liability states when type changes to DEBIT (since debit transactions can't be liabilities)
-    if (type === "DEBIT") {
-      setIsLiability(false);
-      setVendorName("");
-      setDueDate(undefined);
-      setLiabilityDescription("");
-      setLiabilityNotes("");
-    }
-  }, [type]);
+
 
   const fetchData = async () => {
     try {
@@ -450,103 +441,101 @@ export default function NewTransactionPage() {
             </div>
           </div>
 
-          {/* Liability Section - Only show for CREDIT transactions */}
-          {type === "CREDIT" && (
-            <div className="space-y-4 p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isLiability"
-                  checked={isLiability}
-                  onChange={(e) => setIsLiability(e.target.checked)}
-                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                />
-                <Label htmlFor="isLiability" className="flex items-center text-sm font-medium text-orange-800 dark:text-orange-200">
-                  <AlertTriangleIcon className="mr-2 h-4 w-4" />
-                  Ini adalah hutang (barang dulu, bayar nanti)
-                </Label>
-              </div>
-
-              {isLiability && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="vendorName" className="flex items-center text-sm font-medium">
-                      <BuildingIcon className="mr-2 h-4 w-4 text-orange-600" />
-                      Nama Vendor/Supplier
-                    </Label>
-                    <Input
-                      id="vendorName"
-                      type="text"
-                      value={vendorName}
-                      onChange={(e) => setVendorName(e.target.value)}
-                      required={isLiability}
-                      placeholder="Masukkan nama vendor"
-                      className="h-10"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="dueDate" className="flex items-center text-sm font-medium">
-                      <CalendarIcon className="mr-2 h-4 w-4 text-orange-600" />
-                      Tanggal Jatuh Tempo
-                    </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal h-10",
-                            !dueDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {dueDate ? format(dueDate, "PPP") : <span>Pilih tanggal</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={dueDate}
-                          onSelect={setDueDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="liabilityDescription" className="flex items-center text-sm font-medium">
-                      <FileTextIcon className="mr-2 h-4 w-4 text-orange-600" />
-                      Deskripsi Hutang (Opsional)
-                    </Label>
-                    <Input
-                      id="liabilityDescription"
-                      type="text"
-                      value={liabilityDescription}
-                      onChange={(e) => setLiabilityDescription(e.target.value)}
-                      placeholder="Deskripsi detail hutang"
-                      className="h-10"
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="liabilityNotes" className="flex items-center text-sm font-medium">
-                      <FileTextIcon className="mr-2 h-4 w-4 text-orange-600" />
-                      Catatan Tambahan (Opsional)
-                    </Label>
-                    <Input
-                      id="liabilityNotes"
-                      type="text"
-                      value={liabilityNotes}
-                      onChange={(e) => setLiabilityNotes(e.target.value)}
-                      placeholder="Catatan tambahan untuk hutang"
-                      className="h-10"
-                    />
-                  </div>
-                </div>
-              )}
+          {/* Liability Section - Show for both DEBIT and CREDIT transactions */}
+          <div className="space-y-4 p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isLiability"
+                checked={isLiability}
+                onChange={(e) => setIsLiability(e.target.checked)}
+                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+              />
+              <Label htmlFor="isLiability" className="flex items-center text-sm font-medium text-orange-800 dark:text-orange-200">
+                <AlertTriangleIcon className="mr-2 h-4 w-4" />
+                Ini adalah hutang {type === "DEBIT" ? "(akan dibayar nanti - pemasukan)" : "(barang dulu, bayar nanti - pengeluaran)"}
+              </Label>
             </div>
-          )}
+
+            {isLiability && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vendorName" className="flex items-center text-sm font-medium">
+                    <BuildingIcon className="mr-2 h-4 w-4 text-orange-600" />
+                    Nama Vendor/Supplier
+                  </Label>
+                  <Input
+                    id="vendorName"
+                    type="text"
+                    value={vendorName}
+                    onChange={(e) => setVendorName(e.target.value)}
+                    required={isLiability}
+                    placeholder="Masukkan nama vendor"
+                    className="h-10"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dueDate" className="flex items-center text-sm font-medium">
+                    <CalendarIcon className="mr-2 h-4 w-4 text-orange-600" />
+                    Tanggal Jatuh Tempo
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal h-10",
+                          !dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dueDate ? format(dueDate, "PPP") : <span>Pilih tanggal</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate}
+                        onSelect={setDueDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="liabilityDescription" className="flex items-center text-sm font-medium">
+                    <FileTextIcon className="mr-2 h-4 w-4 text-orange-600" />
+                    Deskripsi Hutang (Opsional)
+                  </Label>
+                  <Input
+                    id="liabilityDescription"
+                    type="text"
+                    value={liabilityDescription}
+                    onChange={(e) => setLiabilityDescription(e.target.value)}
+                    placeholder="Deskripsi detail hutang"
+                    className="h-10"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="liabilityNotes" className="flex items-center text-sm font-medium">
+                    <FileTextIcon className="mr-2 h-4 w-4 text-orange-600" />
+                    Catatan Tambahan (Opsional)
+                  </Label>
+                  <Input
+                    id="liabilityNotes"
+                    type="text"
+                    value={liabilityNotes}
+                    onChange={(e) => setLiabilityNotes(e.target.value)}
+                    placeholder="Catatan tambahan untuk hutang"
+                    className="h-10"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Submit Button */}
           <div className="pt-4">

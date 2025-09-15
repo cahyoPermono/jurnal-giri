@@ -102,38 +102,142 @@ export async function POST(request: Request) {
 
       // Handle liability transactions differently
       if (isLiability) {
-        // For liability: DON'T create transaction, only create liability record
+        // For liability: create both liability record AND transaction record
         if (!vendorName || !dueDate) {
           throw new Error("Vendor name and due date are required for liability transactions");
         }
 
-        const liabilityRecord = await tx.liability.create({
-          data: {
-            vendorName,
-            amount: parsedAmount,
-            dueDate: new Date(dueDate),
-            description: liabilityDescription || description,
-            notes: liabilityNotes,
-            userId: session.user.id,
-          },
-        });
+        // Handle DEBIT and CREDIT liabilities differently
+        if (type === TransactionType.DEBIT) {
+          // For DEBIT liability: we lend money, so money goes out (CREDIT transaction)
+          const actualTransactionType = TransactionType.CREDIT;
 
-        // Create audit log for liability creation
-        await tx.auditLog.create({
-          data: {
-            action: "CREATE_LIABILITY",
-            details: {
-              liabilityId: liabilityRecord.id,
-              vendorName: liabilityRecord.vendorName,
-              amount: liabilityRecord.amount,
-              dueDate: liabilityRecord.dueDate,
-              description: liabilityRecord.description,
+          // Get current balance for transaction
+          const currentAccount = await tx.financialAccount.findUnique({
+            where: { id: accountId },
+          });
+
+          if (!currentAccount) {
+            throw new Error("Financial account not found");
+          }
+
+          const balanceBefore = currentAccount.balance;
+          const balanceAfter = currentAccount.balance.minus(parsedAmount); // Money goes out
+
+          // Create the transaction record
+          transactionRecord = await tx.transaction.create({
+            data: {
+              date: new Date(date),
+              description,
+              amount: parsedAmount,
+              type: actualTransactionType,
+              accountId,
+              categoryId: categoryId && categoryId !== "none" ? categoryId : null,
+              studentId: studentId && studentId !== "none" ? studentId : null,
+              userId: session.user.id,
+              // Denormalized fields for data integrity
+              accountName: account.name,
+              categoryName: category?.name || null,
+              studentName: student?.name || null,
+              userName: user.name || user.email || "Unknown User",
+              // Balance tracking
+              balanceBefore,
+              balanceAfter,
+              // Optional proof file
+              proofFile: proofFilePath,
             },
-            userId: session.user.id,
-          },
-        });
+          });
 
-        return liabilityRecord;
+          // Update financial account balance
+          await tx.financialAccount.update({
+            where: { id: accountId },
+            data: { balance: balanceAfter },
+          });
+
+          // Create the liability record
+          const liabilityRecord = await tx.liability.create({
+            data: {
+              vendorName,
+              amount: parsedAmount,
+              dueDate: new Date(dueDate),
+              type: type, // Store the liability type (CREDIT)
+              description: liabilityDescription || description,
+              notes: liabilityNotes,
+              userId: session.user.id,
+              accountId: accountId, // Store the account for future payments
+              // No transactionId for CREDIT liabilities (no transaction created)
+            },
+          });
+
+          // Create audit logs
+          await tx.auditLog.create({
+            data: {
+              action: "CREATE_LIABILITY",
+              details: {
+                liabilityId: liabilityRecord.id,
+                transactionId: transactionRecord.id,
+                vendorName: liabilityRecord.vendorName,
+                amount: liabilityRecord.amount,
+                dueDate: liabilityRecord.dueDate,
+                liabilityType: liabilityRecord.type,
+                description: liabilityRecord.description,
+              },
+              userId: session.user.id,
+            },
+          });
+
+          await tx.auditLog.create({
+            data: {
+              action: `CREATE_TRANSACTION_${transactionRecord.type}`,
+              details: {
+                transactionId: transactionRecord.id,
+                liabilityId: liabilityRecord.id,
+                description: transactionRecord.description,
+                amount: transactionRecord.amount,
+                accountId: transactionRecord.accountId,
+                categoryId: transactionRecord.categoryId,
+                studentId: transactionRecord.studentId,
+                proofFile: proofFilePath,
+              },
+              userId: session.user.id,
+            },
+          });
+
+          return { liabilityRecord, transactionRecord };
+        } else {
+          // For CREDIT liability: we borrow money, but no money movement yet (no transaction)
+          // Create the liability record without transaction
+          const liabilityRecord = await tx.liability.create({
+            data: {
+              vendorName,
+              amount: parsedAmount,
+              dueDate: new Date(dueDate),
+              type: type, // Store the liability type (CREDIT)
+              description: liabilityDescription || description,
+              notes: liabilityNotes,
+              userId: session.user.id,
+              // No transactionId for CREDIT liabilities (no transaction created)
+            },
+          });
+
+          // Create audit log for liability creation
+          await tx.auditLog.create({
+            data: {
+              action: "CREATE_LIABILITY",
+              details: {
+                liabilityId: liabilityRecord.id,
+                vendorName: liabilityRecord.vendorName,
+                amount: liabilityRecord.amount,
+                dueDate: liabilityRecord.dueDate,
+                liabilityType: liabilityRecord.type,
+                description: liabilityRecord.description,
+              },
+              userId: session.user.id,
+            },
+          });
+
+          return liabilityRecord;
+        }
       } else {
         // Normal transaction: create transaction record
         // Get current balance before transaction
