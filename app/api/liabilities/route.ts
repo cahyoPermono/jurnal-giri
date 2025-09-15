@@ -68,10 +68,15 @@ export async function GET(request: Request) {
     );
 
     // Convert Decimal amounts to numbers for frontend
-    const formattedLiabilities = updatedLiabilities.map(liability => ({
-      ...liability,
-      amount: Number(liability.amount),
-    }));
+    const formattedLiabilities = updatedLiabilities.map(liability => {
+      const paidAmount = (liability as any).paidAmount || 0;
+      return {
+        ...liability,
+        amount: Number(liability.amount),
+        paidAmount: Number(paidAmount),
+        remainingAmount: Number(liability.amount.sub(paidAmount)),
+      };
+    });
 
     return NextResponse.json(formattedLiabilities);
   } catch (error) {

@@ -28,6 +28,7 @@ model User {
   transactions  Transaction[]
   auditLogs     AuditLog[]
   liabilities   Liability[]
+  liabilityPayments LiabilityPayment[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
@@ -148,6 +149,9 @@ model Transaction {
   // Relasi ke liability (untuk hutang)
   liability   Liability?
 
+  // Relasi ke liability payment (untuk pembayaran cicil)
+  liabilityPayment LiabilityPayment?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -178,7 +182,8 @@ enum LiabilityStatus {
 model Liability {
   id          String          @id @default(cuid())
   vendorName  String          // Nama vendor/supplier
-  amount      Decimal
+  amount      Decimal         // Total hutang awal
+  paidAmount  Decimal         @default(0) // Total yang sudah dibayar
   dueDate     DateTime        // Tanggal jatuh tempo
   status      LiabilityStatus @default(PENDING)
   type        TransactionType @default(CREDIT) // Tipe hutang: DEBIT atau CREDIT
@@ -196,6 +201,31 @@ model Liability {
   // Akun keuangan yang digunakan (untuk hutang CREDIT yang tidak punya transaksi)
   accountId String?
   account   FinancialAccount? @relation(fields: [accountId], references: [id])
+
+  // Relasi ke pembayaran cicil
+  payments LiabilityPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LiabilityPayment {
+  id          String  @id @default(cuid())
+  amount      Decimal // Jumlah pembayaran cicil
+  description String  // Deskripsi pembayaran
+  date        DateTime @default(now())
+
+  // Relasi ke liability
+  liabilityId String
+  liability   Liability @relation(fields: [liabilityId], references: [id], onDelete: Cascade)
+
+  // Relasi ke transaksi pembayaran
+  transactionId String? @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  // Relasi ke user yang melakukan pembayaran
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

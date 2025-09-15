@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { liabilityId, description, amount } = body;
+    const { liabilityId, description, amount, isFullPayment: markAsFullPayment = false } = body;
 
     if (!liabilityId || !description || !amount) {
       return new NextResponse("Missing required fields", { status: 400 });
@@ -37,7 +37,16 @@ export async function POST(request: Request) {
       }
 
       if (liability.status === "PAID") {
-        throw new Error("Liability is already paid");
+        throw new Error("Liability is already fully paid");
+      }
+
+      // Calculate remaining amount
+      const paidAmount = (liability as any).paidAmount || 0;
+      const remainingAmount = liability.amount.sub(paidAmount);
+
+      // Validate payment amount doesn't exceed remaining
+      if (parsedAmount > remainingAmount.toNumber()) {
+        throw new Error(`Payment amount (${parsedAmount}) exceeds remaining amount (${remainingAmount.toNumber()})`);
       }
 
       // Get the account from the original transaction if it exists, otherwise from liability
@@ -80,11 +89,11 @@ export async function POST(request: Request) {
       if (liability.type === TransactionType.DEBIT) {
         // For DEBIT liability payment: borrower pays back (money comes in) → DEBIT transaction
         transactionType = TransactionType.DEBIT;
-        balanceAfter = balanceBefore.add(parsedAmount); // Use add() instead of plus()
+        balanceAfter = balanceBefore.add(parsedAmount);
       } else {
         // For CREDIT liability payment: we pay back what we borrowed (money goes out) → CREDIT transaction
         transactionType = TransactionType.CREDIT;
-        balanceAfter = balanceBefore.sub(parsedAmount); // Use sub() instead of minus()
+        balanceAfter = balanceBefore.sub(parsedAmount);
       }
 
       // Ensure balanceAfter is a valid Decimal
@@ -99,7 +108,7 @@ export async function POST(request: Request) {
           description,
           amount: parsedAmount,
           type: transactionType,
-          accountId: currentAccount.id, // Use default account
+          accountId: currentAccount.id,
           userId: session.user.id,
           // Denormalized fields for data integrity
           accountName: currentAccount.name,
@@ -110,12 +119,30 @@ export async function POST(request: Request) {
         },
       });
 
-      // Update liability status to PAID
+      // Create liability payment record
+      const liabilityPayment = await (tx as any).liabilityPayment.create({
+        data: {
+          amount: parsedAmount,
+          description,
+          liabilityId: liability.id,
+          transactionId: paymentTransaction.id,
+          userId: session.user.id,
+        },
+      });
+
+      // Calculate new paid amount and determine status
+      const newPaidAmount = (liability as any).paidAmount.add(parsedAmount);
+      const newRemainingAmount = liability.amount.sub(newPaidAmount);
+      const newStatus = newRemainingAmount.isZero() ? "PAID" : liability.status;
+
+      // Update liability
       const updatedLiability = await tx.liability.update({
         where: { id: liabilityId },
         data: {
-          status: "PAID",
-          transactionId: paymentTransaction.id, // Link to payment transaction
+          paidAmount: newPaidAmount,
+          status: newStatus,
+          // Only set transactionId for full payment
+          ...(newStatus === "PAID" && !liability.transactionId ? { transactionId: paymentTransaction.id } : {}),
         },
       });
 
@@ -128,12 +155,16 @@ export async function POST(request: Request) {
       // Create audit logs
       await tx.auditLog.create({
         data: {
-          action: "PAY_LIABILITY",
+          action: markAsFullPayment ? "PAY_LIABILITY_FULL" : "PAY_LIABILITY_PARTIAL",
           details: {
             liabilityId: liability.id,
+            liabilityPaymentId: liabilityPayment.id,
             paymentTransactionId: paymentTransaction.id,
             vendorName: liability.vendorName,
-            amount: liability.amount,
+            paymentAmount: parsedAmount,
+            totalAmount: liability.amount,
+            remainingAmount: newRemainingAmount,
+            isFullPayment: markAsFullPayment,
           },
           userId: session.user.id,
         },
@@ -148,6 +179,7 @@ export async function POST(request: Request) {
             amount: paymentTransaction.amount,
             accountId: paymentTransaction.accountId,
             liabilityId: liability.id,
+            liabilityPaymentId: liabilityPayment.id,
           },
           userId: session.user.id,
         },
@@ -155,13 +187,16 @@ export async function POST(request: Request) {
 
       return {
         paymentTransaction,
+        liabilityPayment,
         updatedLiability,
+        isFullPayment: newStatus === "PAID",
       };
     });
 
+    const isFullPayment = result.updatedLiability.status === "PAID";
     return NextResponse.json({
       success: true,
-      message: "Hutang berhasil dibayar",
+      message: isFullPayment ? "Hutang berhasil dilunasi" : "Pembayaran cicil berhasil",
       data: result,
     }, { status: 200 });
   } catch (error) {

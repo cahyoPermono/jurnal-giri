@@ -20,6 +20,8 @@ interface Liability {
   id: string;
   vendorName: string;
   amount: number;
+  paidAmount: number;
+  remainingAmount: number;
   dueDate: string;
   status: "PENDING" | "PAID" | "OVERDUE";
   type: "DEBIT" | "CREDIT";
@@ -195,6 +197,7 @@ export default function LiabilitiesPage() {
           liabilityId: liability.id,
           description: `Pembayaran hutang ke ${liability.vendorName}`,
           amount: liability.amount,
+          isFullPayment: true,
         }),
       });
 
@@ -205,6 +208,54 @@ export default function LiabilitiesPage() {
 
       const data = await res.json();
       toast.success(`Hutang ke ${liability.vendorName} berhasil dibayar!`);
+
+      // Refresh liabilities to show updated status
+      await fetchLiabilities();
+    } catch (err: any) {
+      toast.error("Failed to pay liability: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const payPartialLiability = async (liability: Liability) => {
+    const partialAmount = prompt(`Masukkan jumlah pembayaran cicil untuk ${liability.vendorName} (Maksimal: ${formatCurrency(liability.remainingAmount)}):`);
+
+    if (!partialAmount) return;
+
+    const amount = parseFloat(partialAmount.replace(/[^\d]/g, ''));
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Jumlah pembayaran tidak valid");
+      return;
+    }
+
+    if (amount > liability.remainingAmount) {
+      toast.error(`Jumlah pembayaran melebihi sisa hutang (${formatCurrency(liability.remainingAmount)})`);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/liabilities/pay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          liabilityId: liability.id,
+          description: `Pembayaran cicil hutang ke ${liability.vendorName}`,
+          amount: amount,
+          isFullPayment: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to pay liability');
+      }
+
+      const data = await res.json();
+      toast.success(`Pembayaran cicil sebesar ${formatCurrency(amount)} berhasil!`);
 
       // Refresh liabilities to show updated status
       await fetchLiabilities();
@@ -365,26 +416,27 @@ export default function LiabilitiesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Vendor</TableHead>
-                  <TableHead>Jumlah</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Sudah Dibayar</TableHead>
+                  <TableHead>Sisa</TableHead>
                   <TableHead>Tipe</TableHead>
                   <TableHead>Jatuh Tempo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Deskripsi</TableHead>
                   <TableHead>Dibuat Oleh</TableHead>
-                  <TableHead>Tanggal Dibuat</TableHead>
                   <TableHead>Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
+                    <TableCell colSpan={10} className="h-24 text-center">
                       Memuat...
                     </TableCell>
                   </TableRow>
                 ) : liabilities.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
+                    <TableCell colSpan={10} className="h-24 text-center">
                       Tidak ada hutang ditemukan.
                     </TableCell>
                   </TableRow>
@@ -399,6 +451,12 @@ export default function LiabilitiesPage() {
                       </TableCell>
                       <TableCell className="font-medium">
                         {formatCurrency(liability.amount)}
+                      </TableCell>
+                      <TableCell className="text-green-600 font-medium">
+                        {formatCurrency(liability.paidAmount)}
+                      </TableCell>
+                      <TableCell className="text-orange-600 font-medium">
+                        {formatCurrency(liability.remainingAmount)}
                       </TableCell>
                       <TableCell>
                         <span className={cn(
@@ -434,32 +492,53 @@ export default function LiabilitiesPage() {
                         {liability.user?.name || liability.user?.email || "Unknown"}
                       </TableCell>
                       <TableCell>
-                        {new Date(liability.createdAt).toLocaleDateString('id-ID')}
-                      </TableCell>
-                      <TableCell>
-                        {liability.status === "PENDING" && (
-                          <Button
-                            onClick={() => payLiability(liability)}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <DollarSignIcon className="mr-1 h-3 w-3" />
-                            Bayar
-                          </Button>
-                        )}
-                        {liability.status === "PAID" && (
-                          <span className="text-green-600 text-sm font-medium">Lunas</span>
-                        )}
-                        {liability.status === "OVERDUE" && (
-                          <Button
-                            onClick={() => payLiability(liability)}
-                            size="sm"
-                            variant="destructive"
-                          >
-                            <AlertTriangleIcon className="mr-1 h-3 w-3" />
-                            Bayar Sekarang
-                          </Button>
-                        )}
+                        <div className="flex flex-col space-y-1">
+                          {liability.status === "PENDING" && liability.remainingAmount > 0 && (
+                            <>
+                              <Button
+                                onClick={() => payPartialLiability(liability)}
+                                size="sm"
+                                variant="outline"
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              >
+                                <DollarSignIcon className="mr-1 h-3 w-3" />
+                                Bayar Cicil
+                              </Button>
+                              <Button
+                                onClick={() => payLiability(liability)}
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <DollarSignIcon className="mr-1 h-3 w-3" />
+                                Bayar Lunas
+                              </Button>
+                            </>
+                          )}
+                          {liability.status === "PAID" && (
+                            <span className="text-green-600 text-sm font-medium">Lunas</span>
+                          )}
+                          {liability.status === "OVERDUE" && liability.remainingAmount > 0 && (
+                            <>
+                              <Button
+                                onClick={() => payPartialLiability(liability)}
+                                size="sm"
+                                variant="outline"
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              >
+                                <DollarSignIcon className="mr-1 h-3 w-3" />
+                                Bayar Cicil
+                              </Button>
+                              <Button
+                                onClick={() => payLiability(liability)}
+                                size="sm"
+                                variant="destructive"
+                              >
+                                <AlertTriangleIcon className="mr-1 h-3 w-3" />
+                                Bayar Lunas
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
