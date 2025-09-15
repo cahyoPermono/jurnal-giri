@@ -52,7 +52,28 @@ export async function GET(request: Request) {
       orderBy: { dueDate: "asc" },
     });
 
-    return NextResponse.json(liabilities);
+    // Update status for liabilities that are overdue
+    const now = new Date();
+    const updatedLiabilities = await Promise.all(
+      liabilities.map(async (liability) => {
+        if (liability.status === "PENDING" && new Date(liability.dueDate) < now) {
+          await prisma.liability.update({
+            where: { id: liability.id },
+            data: { status: "OVERDUE" },
+          });
+          return { ...liability, status: "OVERDUE" };
+        }
+        return liability;
+      })
+    );
+
+    // Convert Decimal amounts to numbers for frontend
+    const formattedLiabilities = updatedLiabilities.map(liability => ({
+      ...liability,
+      amount: Number(liability.amount),
+    }));
+
+    return NextResponse.json(formattedLiabilities);
   } catch (error) {
     console.error("Error fetching liabilities:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
