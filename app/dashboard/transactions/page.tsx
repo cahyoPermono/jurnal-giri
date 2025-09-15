@@ -13,9 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, DownloadIcon, EyeIcon } from "lucide-react";
+import { CalendarIcon, DownloadIcon, EyeIcon, PrinterIcon } from "lucide-react";
 import { toast } from "sonner";
 import { exportToPdf } from "@/lib/pdf-export";
+import ThermalReceipt from "@/components/thermal-receipt";
 
 interface Transaction {
   id: string;
@@ -73,6 +74,8 @@ export default function ViewTransactionsPage() {
   const [students, setStudents] = useState<Student[]>([]);
 
   const [error, setError] = useState<string | null>(null);
+  const [receiptTransaction, setReceiptTransaction] = useState<Transaction | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -142,6 +145,168 @@ export default function ViewTransactionsPage() {
   }
 
   const filteredCategoriesForFilter = categories.filter(cat => typeFilter === undefined || cat.type === typeFilter);
+
+  const handlePrintReceipt = (transaction: Transaction) => {
+    setReceiptTransaction(transaction);
+    setShowReceipt(true);
+  };
+
+  const handlePrint = () => {
+    if (receiptTransaction) {
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Nota Transaksi</title>
+              <style>
+                @media print {
+                  @page {
+                    size: 58mm auto;
+                    margin: 0;
+                  }
+                  body {
+                    margin: 0;
+                    padding: 0;
+                  }
+                  .thermal-receipt {
+                    width: 48mm;
+                    font-family: 'Courier New', monospace;
+                    font-size: 10px;
+                    line-height: 1.2;
+                    margin: 0 auto;
+                    padding: 5mm;
+                    background: white;
+                    color: black;
+                  }
+                  .thermal-receipt * {
+                    box-sizing: border-box;
+                  }
+                }
+                @media screen {
+                  .thermal-receipt {
+                    width: 58mm;
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    margin: 20px auto;
+                    padding: 10px;
+                    border: 1px solid #ccc;
+                    background: white;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                  }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="thermal-receipt">
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 8px;">
+                  <div style="font-size: 14px; font-weight: bold;">KB SUNAN GIRI</div>
+                  <div style="font-size: 10px;">Jl. Contoh No. 123</div>
+                  <div style="font-size: 10px;">Jember, Jawa Timur</div>
+                </div>
+
+                <!-- Separator -->
+                <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+
+                <!-- Transaction Info -->
+                <div style="margin-bottom: 5px;">
+                  <div>No: ${receiptTransaction.id.slice(-8).toUpperCase()}</div>
+                  <div>Tgl: ${new Date(receiptTransaction.date).toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</div>
+                </div>
+
+                <!-- Separator -->
+                <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+
+                <!-- Description -->
+                <div style="margin-bottom: 5px;">
+                  <div style="font-weight: bold; margin-bottom: 3px;">Deskripsi:</div>
+                  <div style="word-wrap: break-word;">${receiptTransaction.description}</div>
+                </div>
+
+                <!-- Transaction Details -->
+                <div style="margin-bottom: 5px;">
+                  <div>Tipe: ${receiptTransaction.type === 'DEBIT' ? 'PEMASUKAN' : receiptTransaction.type === 'CREDIT' ? 'PENGELUARAN' : 'TRANSFER'}</div>
+                  ${receiptTransaction.accountName ? `<div>Akun: ${receiptTransaction.accountName}</div>` : ''}
+                  ${receiptTransaction.categoryName ? `<div>Kategori: ${receiptTransaction.categoryName}</div>` : ''}
+                  ${receiptTransaction.studentName ? `<div>Siswa: ${receiptTransaction.studentName}</div>` : ''}
+                </div>
+
+                <!-- Amount -->
+                <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0; margin: 5px 0; text-align: center;">
+                  <div style="font-size: 14px; font-weight: bold;">
+                    ${new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: 'IDR',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
+                    }).format(receiptTransaction.amount)}
+                  </div>
+                </div>
+
+                <!-- Recorded By -->
+                <div style="margin-bottom: 5px; font-size: 9px;">
+                  <div>Dicatat oleh: ${receiptTransaction.userName}</div>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; margin-top: 10px; font-size: 9px;">
+                  <div>Terima Kasih</div>
+                  <div>KB SUNAN GIRI</div>
+                </div>
+
+                <!-- Signatures -->
+                <div style="margin-top: 15px; font-size: 9px;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <div style="text-align: center;">
+                      <div>Pengelola KB</div>
+                      <div style="margin-top: 20px;"></div>
+                      <div>Zulfa Mazidah, S.Pd.I</div>
+                    </div>
+                    <div style="text-align: center;">
+                      <div>Bendahara</div>
+                      <div style="margin-top: 20px;"></div>
+                      <div>Wiwin Fauziyah, S.sos</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Print timestamp -->
+                <div style="text-align: center; margin-top: 10px; font-size: 8px; border-top: 1px dashed #000; padding-top: 5px;">
+                  <div>Diprint: ${new Date().toLocaleString('id-ID')}</div>
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+
+        // Add a small delay to ensure content is loaded before printing
+        setTimeout(() => {
+          printWindow.print();
+          // Close the print window after printing
+          printWindow.onafterprint = () => {
+            printWindow.close();
+          };
+        }, 100);
+      }
+    }
+  };
+
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
+    setReceiptTransaction(null);
+  };
 
   const exportProofsToPdf = async () => {
     const transactionsWithProofs = transactions.filter(t => t.proofFile);
@@ -432,12 +597,13 @@ export default function ViewTransactionsPage() {
                 <TableHead>Siswa</TableHead>
                 <TableHead>Dicatat Oleh</TableHead>
                 <TableHead>Bukti</TableHead>
+                <TableHead>Print</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center">
+                  <TableCell colSpan={10} className="h-24 text-center">
                     Tidak ada transaksi ditemukan.
                   </TableCell>
                 </TableRow>
@@ -466,6 +632,16 @@ export default function ViewTransactionsPage() {
                         "-"
                       )}
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePrintReceipt(transaction)}
+                      >
+                        <PrinterIcon className="h-4 w-4 mr-1" />
+                        Print
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -473,6 +649,45 @@ export default function ViewTransactionsPage() {
           </Table>
         </div>
       </CardContent>
+
+      {/* Receipt Modal */}
+      {showReceipt && receiptTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Preview Nota Thermal</h3>
+              <button
+                onClick={handleCloseReceipt}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <ThermalReceipt
+                transaction={receiptTransaction}
+                onClose={handleCloseReceipt}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleCloseReceipt}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handlePrint}
+              >
+                <PrinterIcon className="h-4 w-4 mr-2" />
+                Print Nota
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
