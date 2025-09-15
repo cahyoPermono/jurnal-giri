@@ -216,6 +216,7 @@ export async function POST(request: Request) {
               description: liabilityDescription || description,
               notes: liabilityNotes,
               userId: session.user.id,
+              accountId: accountId, // Store the account for future payments
               // No transactionId for CREDIT liabilities (no transaction created)
             },
           });
