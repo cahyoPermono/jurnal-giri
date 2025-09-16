@@ -6,15 +6,48 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions) as any;
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const key = searchParams.get("key");
+
   try {
-    const parameters = await prisma.parameter.findMany({
-      orderBy: { key: "asc" },
-    });
-    return NextResponse.json(parameters);
+    if (key) {
+      // Jika ada parameter key, ambil parameter spesifik (untuk operator)
+      const parameter = await prisma.parameter.findUnique({
+        where: { key },
+      });
+
+      if (!parameter) {
+        // Jika parameter student_groups tidak ada, buat default
+        if (key === "student_groups") {
+          const defaultGroups = await prisma.parameter.upsert({
+            where: { key: "student_groups" },
+            update: {},
+            create: {
+              key: "student_groups",
+              value: '["Kupu-kupu", "Kumbang", "Lebah", "Semut", "Capung", "Kupu-kupu 2", "Kumbang 2"]',
+            },
+          });
+          return NextResponse.json(defaultGroups);
+        }
+        return new NextResponse("Parameter not found", { status: 404 });
+      }
+
+      return NextResponse.json(parameter);
+    } else {
+      // Jika tidak ada key, ambil semua parameter (hanya untuk admin)
+      if (session.user?.role !== "ADMIN") {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+
+      const parameters = await prisma.parameter.findMany({
+        orderBy: { key: "asc" },
+      });
+      return NextResponse.json(parameters);
+    }
   } catch (error) {
     console.error("Error fetching parameters:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

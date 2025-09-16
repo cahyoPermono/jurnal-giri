@@ -71,6 +71,7 @@ async function main() {
   const parameters = [
     { key: "spp_amount", value: "500000" },
     { key: "registration_fee", value: "100000" },
+    { key: "student_groups", value: '["Kupu-kupu", "Kumbang", "Lebah", "Semut", "Capung", "Kupu-kupu 2", "Kumbang 2"]' },
   ];
 
   for (const param of parameters) {

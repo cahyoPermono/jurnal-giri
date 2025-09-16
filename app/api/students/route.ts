@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, nis, parentName, contactNumber, enrollmentDate, graduationDate } = body;
+    const { name, nis, parentName, contactNumber, group, enrollmentDate, graduationDate } = body;
 
     if (!name) {
       return NextResponse.json({ message: "Missing student name" }, { status: 400 });
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
         nis: finalNis,
         parentName: parentName || undefined,
         contactNumber: contactNumber || undefined,
+        group: group || undefined,
         enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : undefined,
         graduationDate: graduationDate ? new Date(graduationDate) : undefined,
       },
@@ -97,7 +98,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, name, nis, parentName, contactNumber, active, enrollmentDate, graduationDate } = body;
+    const { id, name, nis, parentName, contactNumber, group, active, enrollmentDate, graduationDate } = body;
 
     if (!id || !name) {
       return NextResponse.json({ message: "Missing student ID or name" }, { status: 400 });
@@ -112,6 +113,7 @@ export async function PUT(request: Request) {
         nis: nis || undefined,
         parentName: parentName || undefined,
         contactNumber: contactNumber || undefined,
+        group: group || undefined,
         active: active !== undefined ? active : undefined,
         enrollmentDate: enrollmentDate ? new Date(enrollmentDate) : undefined,
         graduationDate: graduationDate ? new Date(graduationDate) : undefined,

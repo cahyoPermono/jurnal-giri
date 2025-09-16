@@ -106,6 +106,7 @@ model Student {
   name          String
   parentName    String?
   contactNumber String?
+  group         String?       // Kelompok siswa (Kupu-kupu, Kumbang, dll)
   active        Boolean       @default(true)
   enrollmentDate DateTime?
   graduationDate DateTime?

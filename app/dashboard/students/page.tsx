@@ -40,6 +40,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Student {
   id: string;
@@ -47,6 +48,7 @@ interface Student {
   name: string;
   parentName: string | null;
   contactNumber: string | null;
+  group: string | null;
   active: boolean;
   enrollmentDate: string | null;
   graduationDate: string | null;
@@ -60,12 +62,14 @@ export default function ManageStudentsPage() {
   const [newStudentName, setNewStudentName] = useState("");
   const [newStudentParentName, setNewStudentParentName] = useState("");
   const [newStudentContactNumber, setNewStudentContactNumber] = useState("");
+  const [newStudentGroup, setNewStudentGroup] = useState("");
   const [newStudentEnrollmentDate, setNewStudentEnrollmentDate] = useState<
     Date | undefined
   >(new Date());
 
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
+  const [studentGroups, setStudentGroups] = useState<string[]>([]);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -75,6 +79,7 @@ export default function ManageStudentsPage() {
     }
 
     fetchStudents();
+    fetchStudentGroups();
   }, [session, status, router]);
 
   const fetchStudents = async () => {
@@ -87,6 +92,22 @@ export default function ManageStudentsPage() {
       setStudents(data);
     } catch (err: any) {
       toast.error("Gagal mengambil data siswa: " + err.message);
+    }
+  };
+
+  const fetchStudentGroups = async () => {
+    try {
+      const res = await fetch("/api/parameters?key=student_groups");
+      if (!res.ok) {
+        throw new Error("Failed to fetch student groups");
+      }
+      const data = await res.json();
+      const groups = JSON.parse(data.value);
+      setStudentGroups(groups);
+    } catch (err: any) {
+      console.error("Gagal mengambil data kelompok:", err.message);
+      // Set default groups if parameter doesn't exist
+      setStudentGroups(["Kupu-kupu", "Kumbang", "Lebah", "Semut", "Capung", "Kupu-kupu 2", "Kumbang 2"]);
     }
   };
 
@@ -110,6 +131,7 @@ export default function ManageStudentsPage() {
           name: newStudentName,
           parentName: newStudentParentName || null,
           contactNumber: newStudentContactNumber || null,
+          group: newStudentGroup || null,
           enrollmentDate: newStudentEnrollmentDate?.toISOString() || null,
         }),
       });
@@ -123,6 +145,7 @@ export default function ManageStudentsPage() {
       setNewStudentName("");
       setNewStudentParentName("");
       setNewStudentContactNumber("");
+      setNewStudentGroup("");
       setNewStudentEnrollmentDate(new Date());
       fetchStudents(); // Refresh the list
     } catch (err: any) {
@@ -147,6 +170,7 @@ export default function ManageStudentsPage() {
           nis: editingStudent.nis,
           parentName: editingStudent.parentName || null,
           contactNumber: editingStudent.contactNumber || null,
+          group: editingStudent.group || null,
           active: editingStudent.active,
           enrollmentDate: editingStudent.enrollmentDate
             ? new Date(editingStudent.enrollmentDate).toISOString()
@@ -237,6 +261,21 @@ export default function ManageStudentsPage() {
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="newStudentGroup">Kelompok</Label>
+              <Select value={newStudentGroup} onValueChange={setNewStudentGroup}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih kelompok" />
+                </SelectTrigger>
+                <SelectContent>
+                  {studentGroups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="newStudentEnrollmentDate">Tanggal Pendaftaran</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -285,6 +324,7 @@ export default function ManageStudentsPage() {
                     <TableHead>NIS</TableHead>
                     <TableHead>Nama Orang Tua</TableHead>
                     <TableHead>Kontak</TableHead>
+                    <TableHead>Kelompok</TableHead>
                     <TableHead>Aktif</TableHead>
                     <TableHead>Tanggal Pendaftaran</TableHead>
                     <TableHead>Tanggal Kelulusan</TableHead>
@@ -301,6 +341,7 @@ export default function ManageStudentsPage() {
                       <TableCell>{student.nis}</TableCell>
                       <TableCell>{student.parentName || "-"}</TableCell>
                       <TableCell>{student.contactNumber || "-"}</TableCell>
+                      <TableCell>{student.group || "-"}</TableCell>
                       <TableCell>{student.active ? "Ya" : "Tidak"}</TableCell>
                       <TableCell>
                         {student.enrollmentDate
@@ -411,6 +452,29 @@ export default function ManageStudentsPage() {
                       })
                     }
                   />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="editGroup">Kelompok</Label>
+                  <Select
+                    value={editingStudent.group || ""}
+                    onValueChange={(value) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        group: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih kelompok" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {studentGroups.map((group) => (
+                        <SelectItem key={group} value={group}>
+                          {group}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="editEnrollmentDate">Tanggal Pendaftaran</Label>
