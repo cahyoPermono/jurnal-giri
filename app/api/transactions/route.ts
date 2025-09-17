@@ -356,10 +356,27 @@ export async function GET(request: Request) {
 
     const transactions = await prisma.transaction.findMany({
       where,
+      include: {
+        student: {
+          select: {
+            name: true,
+            nis: true,
+            group: true,
+          },
+        },
+      },
       orderBy: { date: "desc" },
     });
 
-    return NextResponse.json(transactions);
+    // Transform the data to include student details in the transaction object
+    const transformedTransactions = transactions.map((transaction) => ({
+      ...transaction,
+      studentName: transaction.student?.name || null,
+      studentNis: transaction.student?.nis || null,
+      studentGroup: transaction.student?.group || null,
+    }));
+
+    return NextResponse.json(transformedTransactions);
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

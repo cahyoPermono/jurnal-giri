@@ -9,6 +9,8 @@ interface Transaction {
   accountName?: string;
   categoryName?: string;
   studentName?: string;
+  studentNis?: string;
+  studentGroup?: string;
   userName?: string;
 }
 
@@ -85,74 +87,90 @@ export default function ThermalReceipt({ transaction, onClose }: ThermalReceiptP
 
       <div className="thermal-receipt">
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 'bold' }}>KB SUNAN GIRI</div>
-          <div style={{ fontSize: '10px' }}>Jl. Contoh No. 123</div>
-          <div style={{ fontSize: '10px' }}>Jember, Jawa Timur</div>
+        <div style={{ textAlign: 'center', marginBottom: '5px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '3px' }}>KWITANSI PEMBAYARAN</div>
+          <div style={{ fontSize: '11px', fontWeight: 'bold' }}>Yayasan Pendidikan dan dakwah muslimat NU SUNAN GIRI</div>
+          <div style={{ fontSize: '9px' }}>Taman pengasuhan anak INDIRA GIRI & Kelompok Bermain SUNAN GIRI</div>
+          <div style={{ fontSize: '8px' }}>JL HOS COKROAMINOTO 7 Balung Jember 68181</div>
+          <div style={{ fontSize: '8px' }}>WA 087743495335</div>
         </div>
 
         {/* Separator */}
-        <div style={{ borderTop: '1px dashed #000', margin: '5px 0' }}></div>
+        <div style={{ borderTop: '2px solid #000', margin: '8px 0' }}></div>
 
-        {/* Transaction Info */}
-        <div style={{ marginBottom: '5px' }}>
-          <div>No: {transaction.id.slice(-8).toUpperCase()}</div>
-          <div>Tgl: {formatDate(transaction.date)}</div>
-        </div>
-
-        {/* Separator */}
-        <div style={{ borderTop: '1px dashed #000', margin: '5px 0' }}></div>
-
-        {/* Description */}
-        <div style={{ marginBottom: '5px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '3px' }}>Deskripsi:</div>
-          <div style={{ wordWrap: 'break-word' }}>{transaction.description}</div>
-        </div>
-
-        {/* Transaction Details */}
-        <div style={{ marginBottom: '5px' }}>
-          <div>Tipe: {transaction.type === 'DEBIT' ? 'PEMASUKAN' : transaction.type === 'CREDIT' ? 'PENGELUARAN' : 'TRANSFER'}</div>
-          {transaction.accountName && <div>Akun: {transaction.accountName}</div>}
-          {transaction.categoryName && <div>Kategori: {transaction.categoryName}</div>}
-          {transaction.studentName && <div>Siswa: {transaction.studentName}</div>}
-        </div>
-
-        {/* Amount */}
-        <div style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000', padding: '5px 0', margin: '5px 0', textAlign: 'center' }}>
-          <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-            {formatCurrency(transaction.amount)}
+        {/* Receipt Number and Date */}
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px' }}>
+            <div><strong>No. Kwitansi:</strong> {transaction.id.slice(-8).toUpperCase()}</div>
+            <div><strong>Tanggal:</strong> {formatDate(transaction.date)}</div>
           </div>
         </div>
 
+        {/* Separator */}
+        <div style={{ borderTop: '1px dashed #000', margin: '5px 0' }}></div>
+
+        {/* Student Details (if applicable) */}
+        {transaction.studentName && (
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '3px' }}>TELAH TERIMA DARI:</div>
+            <div style={{ fontSize: '9px' }}>Nama Siswa: {transaction.studentName}</div>
+            {transaction.studentNis && <div style={{ fontSize: '9px' }}>NIS: {transaction.studentNis}</div>}
+            {transaction.studentGroup && <div style={{ fontSize: '9px' }}>Kelompok: {transaction.studentGroup}</div>}
+          </div>
+        )}
+
+        {/* Payment Details */}
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '3px' }}>UNTUK PEMBAYARAN:</div>
+          <div style={{ fontSize: '9px', wordWrap: 'break-word' }}>{transaction.description}</div>
+          {transaction.categoryName && <div style={{ fontSize: '9px' }}>Kategori: {transaction.categoryName}</div>}
+        </div>
+
+        {/* Amount Section */}
+        <div style={{ border: '2px solid #000', padding: '8px', margin: '8px 0', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '3px' }}>JUMLAH BAYAR</div>
+          <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+            {formatCurrency(transaction.amount)}
+          </div>
+          <div style={{ fontSize: '9px', marginTop: '3px' }}>
+            ({transaction.type === 'DEBIT' ? 'Pemasukan' : transaction.type === 'CREDIT' ? 'Pengeluaran' : 'Transfer'})
+          </div>
+        </div>
+
+        {/* Account Info */}
+        {transaction.accountName && (
+          <div style={{ marginBottom: '8px', fontSize: '9px' }}>
+            <div><strong>Akun:</strong> {transaction.accountName}</div>
+          </div>
+        )}
+
         {/* Recorded By */}
-        <div style={{ marginBottom: '5px', fontSize: '9px' }}>
-          <div>Dicatat oleh: {transaction.userName}</div>
+        <div style={{ marginBottom: '8px', fontSize: '9px' }}>
+          <div><strong>Dicatat oleh:</strong> {transaction.userName}</div>
         </div>
 
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '9px' }}>
-          <div>Terima Kasih</div>
-          <div>KB SUNAN GIRI</div>
+          <div style={{ fontWeight: 'bold' }}>Terima Kasih atas Pembayaran Anda</div>
+          <div style={{ marginTop: '3px' }}>KB SUNAN GIRI</div>
         </div>
 
         {/* Signatures */}
         <div style={{ marginTop: '15px', fontSize: '9px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div style={{ textAlign: 'center' }}>
-              <div>Pengelola KB</div>
-              <div style={{ marginTop: '20px' }}></div>
-              <div>Zulfa Mazidah, S.Pd.I</div>
+              <div style={{ marginBottom: '20px' }}>Pengelola KB</div>
+              <div style={{ borderTop: '1px solid #000', paddingTop: '2px' }}>Zulfa Mazidah, S.Pd.I</div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div>Bendahara</div>
-              <div style={{ marginTop: '20px' }}></div>
-              <div>Wiwin Fauziyah, S.sos</div>
+              <div style={{ marginBottom: '20px' }}>Bendahara</div>
+              <div style={{ borderTop: '1px solid #000', paddingTop: '2px' }}>Wiwin Fauziyah, S.sos</div>
             </div>
           </div>
         </div>
 
         {/* Print timestamp */}
-        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '8px', borderTop: '1px dashed #000', paddingTop: '5px' }}>
+        <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '7px', borderTop: '1px dashed #000', paddingTop: '3px' }}>
           <div>Diprint: {new Date().toLocaleString('id-ID')}</div>
         </div>
       </div>

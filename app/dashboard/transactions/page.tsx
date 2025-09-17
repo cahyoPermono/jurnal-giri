@@ -32,6 +32,8 @@ interface Transaction {
   accountName?: string;
   categoryName?: string;
   studentName?: string;
+  studentNis?: string;
+  studentGroup?: string;
   userName?: string;
   proofFile?: string;
 }
@@ -203,47 +205,55 @@ export default function ViewTransactionsPage() {
             <body>
               <div class="thermal-receipt">
                 <!-- Header -->
-                <div style="text-align: center; margin-bottom: 8px;">
-                  <div style="font-size: 14px; font-weight: bold;">KB SUNAN GIRI</div>
-                  <div style="font-size: 10px;">Jl. Contoh No. 123</div>
-                  <div style="font-size: 10px;">Jember, Jawa Timur</div>
+                <div style="text-align: center; margin-bottom: 5px;">
+                  <div style="font-size: 14px; font-weight: bold; margin-bottom: 3px;">KWITANSI PEMBAYARAN</div>
+                  <div style="font-size: 11px; font-weight: bold;">Yayasan Pendidikan dan dakwah muslimat NU SUNAN GIRI</div>
+                  <div style="font-size: 9px;">Taman pengasuhan anak INDIRA GIRI & Kelompok Bermain SUNAN GIRI</div>
+                  <div style="font-size: 8px;">JL HOS COKROAMINOTO 7 Balung Jember 68181</div>
+                  <div style="font-size: 8px;">WA 087743495335</div>
+                </div>
+
+                <!-- Separator -->
+                <div style="border-top: 2px solid #000; margin: 8px 0;"></div>
+
+                <!-- Receipt Number and Date -->
+                <div style="margin-bottom: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 9px;">
+                    <div><strong>No. Kwitansi:</strong> ${receiptTransaction.id.slice(-8).toUpperCase()}</div>
+                    <div><strong>Tanggal:</strong> ${new Date(receiptTransaction.date).toLocaleDateString('id-ID', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</div>
+                  </div>
                 </div>
 
                 <!-- Separator -->
                 <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
 
-                <!-- Transaction Info -->
-                <div style="margin-bottom: 5px;">
-                  <div>No: ${receiptTransaction.id.slice(-8).toUpperCase()}</div>
-                  <div>Tgl: ${new Date(receiptTransaction.date).toLocaleDateString('id-ID', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}</div>
+                <!-- Student Details (if applicable) -->
+                ${receiptTransaction.studentName ? `
+                <div style="margin-bottom: 8px;">
+                  <div style="font-size: 10px; font-weight: bold; margin-bottom: 3px;">TELAH TERIMA DARI:</div>
+                  <div style="font-size: 9px;">Nama Siswa: ${receiptTransaction.studentName}</div>
+                  ${receiptTransaction.studentNis ? `<div style="font-size: 9px;">NIS: ${receiptTransaction.studentNis}</div>` : ''}
+                  ${receiptTransaction.studentGroup ? `<div style="font-size: 9px;">Kelompok: ${receiptTransaction.studentGroup}</div>` : ''}
+                </div>
+                ` : ''}
+
+                <!-- Payment Details -->
+                <div style="margin-bottom: 8px;">
+                  <div style="font-size: 10px; font-weight: bold; margin-bottom: 3px;">UNTUK PEMBAYARAN:</div>
+                  <div style="font-size: 9px; word-wrap: break-word;">${receiptTransaction.description}</div>
+                  ${receiptTransaction.categoryName ? `<div style="font-size: 9px;">Kategori: ${receiptTransaction.categoryName}</div>` : ''}
                 </div>
 
-                <!-- Separator -->
-                <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
-
-                <!-- Description -->
-                <div style="margin-bottom: 5px;">
-                  <div style="font-weight: bold; margin-bottom: 3px;">Deskripsi:</div>
-                  <div style="word-wrap: break-word;">${receiptTransaction.description}</div>
-                </div>
-
-                <!-- Transaction Details -->
-                <div style="margin-bottom: 5px;">
-                  <div>Tipe: ${receiptTransaction.type === 'DEBIT' ? 'PEMASUKAN' : receiptTransaction.type === 'CREDIT' ? 'PENGELUARAN' : 'TRANSFER'}</div>
-                  ${receiptTransaction.accountName ? `<div>Akun: ${receiptTransaction.accountName}</div>` : ''}
-                  ${receiptTransaction.categoryName ? `<div>Kategori: ${receiptTransaction.categoryName}</div>` : ''}
-                  ${receiptTransaction.studentName ? `<div>Siswa: ${receiptTransaction.studentName}</div>` : ''}
-                </div>
-
-                <!-- Amount -->
-                <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0; margin: 5px 0; text-align: center;">
-                  <div style="font-size: 14px; font-weight: bold;">
+                <!-- Amount Section -->
+                <div style="border: 2px solid #000; padding: 8px; margin: 8px 0; text-align: center;">
+                  <div style="font-size: 12px; font-weight: bold; margin-bottom: 3px;">JUMLAH BAYAR</div>
+                  <div style="font-size: 16px; font-weight: bold;">
                     ${new Intl.NumberFormat('id-ID', {
                       style: 'currency',
                       currency: 'IDR',
@@ -251,31 +261,39 @@ export default function ViewTransactionsPage() {
                       maximumFractionDigits: 0
                     }).format(receiptTransaction.amount)}
                   </div>
+                  <div style="font-size: 9px; margin-top: 3px;">
+                    (${receiptTransaction.type === 'DEBIT' ? 'Pemasukan' : receiptTransaction.type === 'CREDIT' ? 'Pengeluaran' : 'Transfer'})
+                  </div>
                 </div>
 
+                <!-- Account Info -->
+                ${receiptTransaction.accountName ? `
+                <div style="margin-bottom: 8px; font-size: 9px;">
+                  <div><strong>Akun:</strong> ${receiptTransaction.accountName}</div>
+                </div>
+                ` : ''}
+
                 <!-- Recorded By -->
-                <div style="margin-bottom: 5px; font-size: 9px;">
-                  <div>Dicatat oleh: ${receiptTransaction.userName}</div>
+                <div style="margin-bottom: 8px; font-size: 9px;">
+                  <div><strong>Dicatat oleh:</strong> ${receiptTransaction.userName}</div>
                 </div>
 
                 <!-- Footer -->
                 <div style="text-align: center; margin-top: 10px; font-size: 9px;">
-                  <div>Terima Kasih</div>
-                  <div>KB SUNAN GIRI</div>
+                  <div style="font-weight: bold;">Terima Kasih atas Pembayaran Anda</div>
+                  <div style="margin-top: 3px;">KB SUNAN GIRI</div>
                 </div>
 
                 <!-- Signatures -->
                 <div style="margin-top: 15px; font-size: 9px;">
                   <div style="display: flex; justify-content: space-between;">
                     <div style="text-align: center;">
-                      <div>Pengelola KB</div>
-                      <div style="margin-top: 20px;"></div>
-                      <div>Zulfa Mazidah, S.Pd.I</div>
+                      <div style="margin-bottom: 20px;">Pengelola KB</div>
+                      <div style="border-top: 1px solid #000; padding-top: 2px;">Zulfa Mazidah, S.Pd.I</div>
                     </div>
                     <div style="text-align: center;">
-                      <div>Bendahara</div>
-                      <div style="margin-top: 20px;"></div>
-                      <div>Wiwin Fauziyah, S.sos</div>
+                      <div style="margin-bottom: 20px;">Bendahara</div>
+                      <div style="border-top: 1px solid #000; padding-top: 2px;">Wiwin Fauziyah, S.sos</div>
                     </div>
                   </div>
                 </div>
