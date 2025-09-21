@@ -445,8 +445,40 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
           maxRowHeight = Math.max(maxRowHeight, 8); // Minimum height for empty rows
         }
 
+        // Check if we need a new page before drawing this row
+        if (yPosition + maxRowHeight > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+
+          // Redraw table headers on new page
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFillColor(240, 240, 240); // Light gray background
+
+          // Header background
+          pdf.rect(margin, yPosition - 5, tableWidth, rowHeight, 'F');
+
+          headers.forEach((header, index) => {
+            const x = margin + columnWidths.slice(0, index).reduce((sum, width) => sum + width, 0);
+            pdf.text(header, x + 2, yPosition + 3);
+
+            // Draw vertical lines
+            pdf.line(x, yPosition - 5, x, yPosition - 5 + rowHeight);
+          });
+          // Draw the rightmost vertical line for the header
+          const lastHeaderX = margin + tableWidth;
+          pdf.line(lastHeaderX, yPosition - 5, lastHeaderX, yPosition - 5 + rowHeight);
+
+          // Draw header borders
+          pdf.rect(margin, yPosition - 5, tableWidth, rowHeight);
+          yPosition += rowHeight;
+
+          // Reset font for rows
+          pdf.setFont('helvetica', 'normal');
+        }
+
         // Draw the rectangle for the entire row
-        pdf.rect(margin, currentY - 5, tableWidth, maxRowHeight);
+        pdf.rect(margin, yPosition - 5, tableWidth, maxRowHeight);
 
         // Handle empty rows differently - draw all vertical lines even if no content
         if (isEmptyRow) {
@@ -454,7 +486,7 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
           for (let cellIndex = 0; cellIndex < headers.length; cellIndex++) {
             const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
             if (cellIndex < headers.length - 1) {
-              pdf.line(nextX, currentY - 5, nextX, currentY - 5 + maxRowHeight);
+              pdf.line(nextX, yPosition - 5, nextX, yPosition - 5 + maxRowHeight);
             }
           }
         } else {
@@ -479,22 +511,22 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
             // Draw cell content with text wrapping
             if (isRekapPenerimaanBulan && cellIndex === 2) {
               const lines = pdf.splitTextToSize(displayText, cellWidth);
-              pdf.text(lines, x + 2, currentY + 3);
+              pdf.text(lines, x + 2, yPosition + 3);
             } else if (isBukuKasBulanan && cellIndex === 2) {
               // Text wrapping for Uraian column (index 2) in Buku Kas Bulanan
               const lines = pdf.splitTextToSize(displayText, cellWidth);
-              pdf.text(lines, x + 2, currentY + 3);
+              pdf.text(lines, x + 2, yPosition + 3);
             } else if (elementId === 'transactions-table' && [1, 4, 5, 6].includes(cellIndex)) {
               const lines = pdf.splitTextToSize(displayText, cellWidth);
-              pdf.text(lines, x + 2, currentY + 3);
+              pdf.text(lines, x + 2, yPosition + 3);
             } else {
-              pdf.text(displayText, x + 2, currentY + 3);
+              pdf.text(displayText, x + 2, yPosition + 3);
             }
 
             // Draw vertical divider lines
             const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
             if (cellIndex < headers.length - 1) {
-              pdf.line(nextX, currentY - 5, nextX, currentY - 5 + maxRowHeight);
+              pdf.line(nextX, yPosition - 5, nextX, yPosition - 5 + maxRowHeight);
             }
           });
         }

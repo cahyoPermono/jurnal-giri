@@ -344,7 +344,9 @@ export default function ViewTransactionsPage() {
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 15; // Reduced margin for more space
+      const margin = 10; // Smaller margin for more space
+      const columnWidth = (pageWidth - 3 * margin) / 2; // Two columns with space between
+      const columnSpacing = margin;
 
       // Header
       pdf.setFontSize(14);
@@ -362,28 +364,44 @@ export default function ViewTransactionsPage() {
       pdf.text(dateRangeText, pageWidth / 2, margin + 12, { align: 'center' });
 
       let yPosition = margin + 20;
+      let columnIndex = 0; // 0 for left column, 1 for right column
+      let rowMaxHeight = 0; // Track the maximum height used in the current row
 
-      for (const transaction of transactionsWithProofs) {
+      for (let i = 0; i < transactionsWithProofs.length; i++) {
+        const transaction = transactionsWithProofs[i];
+
+        // Calculate column x position
+        const xPosition = margin + (columnIndex * (columnWidth + columnSpacing));
+
         // Check if we need a new page (leave space for signature)
-        if (yPosition > pageHeight - 80) {
+        if (yPosition + rowMaxHeight > pageHeight - 100) {
           pdf.addPage();
           yPosition = margin;
+          columnIndex = 0;
+          rowMaxHeight = 0;
         }
 
-        // Transaction details - only essential info
-        pdf.setFontSize(9);
+        // Transaction details - compact layout
+        pdf.setFontSize(8);
         pdf.setFont('helvetica', 'normal');
         const dateStr = new Date(transaction.date).toLocaleDateString('id-ID');
         const amountStr = `Rp ${Number(transaction.amount).toLocaleString('id-ID')}`;
 
-        pdf.text(`Tanggal: ${dateStr}`, margin, yPosition);
-        yPosition += 4;
-        pdf.text(`Deskripsi: ${transaction.description}`, margin, yPosition);
-        yPosition += 4;
-        pdf.text(`Jumlah: ${amountStr}`, margin, yPosition);
-        yPosition += 4;
-        pdf.text(`Tipe: ${transaction.type}`, margin, yPosition);
-        yPosition += 6;
+        let currentY = yPosition;
+        pdf.text(`Tanggal: ${dateStr}`, xPosition, currentY);
+        currentY += 3;
+        pdf.text(`Jumlah: ${amountStr}`, xPosition, currentY);
+        currentY += 3;
+        pdf.text(`Tipe: ${transaction.type}`, xPosition, currentY);
+        currentY += 3;
+
+        // Truncate description if too long
+        const maxDescLength = 25;
+        const truncatedDesc = transaction.description.length > maxDescLength
+          ? transaction.description.substring(0, maxDescLength) + '...'
+          : transaction.description;
+        pdf.text(`Desc: ${truncatedDesc}`, xPosition, currentY);
+        currentY += 5;
 
         // Try to add the proof image
         if (transaction.proofFile) {
@@ -405,39 +423,68 @@ export default function ViewTransactionsPage() {
                   img.src = base64;
                 });
 
-                // Calculate proportional dimensions to fit within page
-                const maxWidth = pageWidth - 2 * margin;
-                const maxHeight = 60; // Smaller height for more compact layout
+                // Calculate dimensions to fit in column
+                const maxImgWidth = columnWidth - 4; // Small padding
+                const maxImgHeight = 40; // Smaller height for 2-column layout
 
-                let imgWidth = maxWidth;
-                let imgHeight = (img.height * maxWidth) / img.width;
+                let imgWidth = maxImgWidth;
+                let imgHeight = (img.height * maxImgWidth) / img.width;
 
                 // If height exceeds max, scale down
-                if (imgHeight > maxHeight) {
-                  imgHeight = maxHeight;
-                  imgWidth = (img.width * maxHeight) / img.height;
+                if (imgHeight > maxImgHeight) {
+                  imgHeight = maxImgHeight;
+                  imgWidth = (img.width * maxImgHeight) / img.height;
                 }
 
-                pdf.addImage(base64, 'JPEG', margin, yPosition, imgWidth, imgHeight);
-                yPosition += imgHeight + 8;
+                pdf.addImage(base64, 'JPEG', xPosition, currentY, imgWidth, imgHeight);
+                currentY += imgHeight + 5;
               } else {
-                pdf.setFontSize(8);
-                pdf.text(`Bukti: ${blob.type} - Tidak dapat ditampilkan`, margin, yPosition);
-                yPosition += 8;
+                pdf.setFontSize(7);
+                pdf.text(`Bukti: ${blob.type}`, xPosition, currentY);
+                currentY += 8;
               }
             }
           } catch (error) {
-            pdf.setFontSize(8);
-            pdf.text(`Bukti: Gagal memuat file`, margin, yPosition);
-            yPosition += 8;
+            pdf.setFontSize(7);
+            pdf.text(`Bukti: Error`, xPosition, currentY);
+            currentY += 8;
           }
         }
 
-        // Smaller space between transactions
-        yPosition += 10;
+        // Calculate height used by this item
+        const itemHeight = currentY - yPosition;
+        if (itemHeight > rowMaxHeight) {
+          rowMaxHeight = itemHeight;
+        }
+
+        // Move to next column
+        columnIndex++;
+
+        // If we've filled both columns, move to next row
+        if (columnIndex >= 2) {
+          yPosition += rowMaxHeight + 8; // Move down by the max height of this row plus spacing
+          columnIndex = 0;
+          rowMaxHeight = 0; // Reset for next row
+        }
+      }
+
+      // If we ended with an incomplete row, move yPosition down
+      if (columnIndex > 0) {
+        yPosition += rowMaxHeight + 10;
       }
 
       // Add signature at the end
+      // Ensure we're on a new line if we ended mid-row
+      if (columnIndex !== 0) {
+        yPosition += 10;
+      }
+
+      // Check if we need a new page for signatures
+      if (yPosition > pageHeight - 40) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+
       const currentDate = new Date();
       const formattedDate = `${currentDate.getDate()}-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}`;
 
