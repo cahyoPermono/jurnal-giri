@@ -52,7 +52,12 @@ export default function DashboardHomePage() {
       {networkInfo && (
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <h3 className="text-lg font-semibold text-blue-900 mb-2">Akses dari Jaringan</h3>
-          <p className="text-blue-700">Aplikasi dapat diakses dari device lain di jaringan yang sama melalui: <strong>http://{networkInfo.ip}:{networkInfo.port}</strong></p>
+          <p className="text-blue-700">
+            Aplikasi dapat diakses dari device lain di jaringan yang sama melalui: <strong>http://{networkInfo.ip}:{networkInfo.port}</strong>
+          </p>
+          <p className="text-sm text-blue-600 mt-1">
+            Jika aplikasi berjalan di Docker, pastikan untuk menggunakan IP address host machine, bukan IP container Docker.
+          </p>
         </div>
       )}
 

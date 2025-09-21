@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     });
 
     // Convert Decimal amounts to numbers for frontend
-    const formattedPayments = payments.map(payment => ({
+    const formattedPayments = payments.map((payment: any) => ({
       ...payment,
       amount: Number(payment.amount),
       transaction: payment.transaction ? {
