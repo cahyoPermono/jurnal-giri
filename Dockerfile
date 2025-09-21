@@ -32,6 +32,10 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
+
+# Create uploads directory and set permissions
+RUN mkdir -p public/uploads && \
+    chown -R nextjs:nodejs public/uploads
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma

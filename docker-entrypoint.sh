@@ -20,6 +20,16 @@ else
   echo "Seed script not found, skipping seeding."
 fi
 
+# Ensure uploads directory exists and has proper permissions
+echo "Ensuring uploads directory exists..."
+mkdir -p public/uploads
+chmod 755 public/uploads
+# Change ownership of the directory itself (not recursively to avoid permission issues with volume files)
+chown nextjs:nodejs public/uploads
+# Set proper permissions for existing files in the volume (if any)
+find public/uploads -type f -exec chmod 644 {} \; 2>/dev/null || true
+echo "Uploads directory setup completed."
+
 # Execute the main command (CMD) passed to the container
 echo "Starting the main application..."
 exec "$@"

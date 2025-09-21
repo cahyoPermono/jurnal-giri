@@ -24,6 +24,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - uploads_data:/app/public/uploads
     environment:
       DATABASE_URL: "postgresql://admin:password@db:5432/girifinancials"
       NEXTAUTH_URL: "http://localhost:3000"
@@ -43,3 +45,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
