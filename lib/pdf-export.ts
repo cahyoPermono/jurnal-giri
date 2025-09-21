@@ -241,11 +241,11 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
           pdf.text('- Tidak ada hutang', margin + 10, yPosition);
           yPosition += 8;
         } else {
-          student.unpaidItems.forEach((item: any) => {
-            const itemText = `- ${item.type}${item.month ? ` (${item.month})` : ''}: Rp ${item.amount.toFixed(2)}`;
-            pdf.text(itemText, margin + 10, yPosition);
-            yPosition += 6;
-          });
+        student.unpaidItems.forEach((item: any) => {
+          const itemText = `- ${item.type}${item.month ? ` (${item.month})` : ''}: ${formatRupiah(item.amount)}`;
+          pdf.text(itemText, margin + 10, yPosition);
+          yPosition += 6;
+        });
         }
         yPosition += 10; // Space between students
       });
@@ -504,6 +504,38 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
                 displayText = formatIndonesianDate(cell);
               } else if ([3, 4, 5].includes(cellIndex)) {
                 // Format Rupiah untuk kolom Debet, Credit, Saldo (index 3, 4, 5)
+                displayText = formatRupiah(cell);
+              }
+            }
+
+            // Apply formatting for Rekap Penerimaan Bulan
+            if (isRekapPenerimaanBulan) {
+              if ([3, 4].includes(cellIndex)) {
+                // Format Rupiah untuk kolom Amount dan Saldo (index 3, 4)
+                displayText = formatRupiah(cell);
+              }
+            }
+
+            // Apply formatting for Laporan Keuangan Bulanan
+            if (isLaporanKeuanganBulanan) {
+              if ([2, 5].includes(cellIndex)) {
+                // Format Rupiah untuk kolom Total Penerimaan dan Total Pengeluaran (index 2, 5)
+                displayText = formatRupiah(cell);
+              }
+            }
+
+            // Apply formatting for Rekap Semester
+            if (isRekapSemester) {
+              if ([1, 2, 3, 4].includes(cellIndex)) {
+                // Format Rupiah untuk kolom Saldo Awal, Penerimaan, Pengeluaran, Saldo Akhir (index 1, 2, 3, 4)
+                displayText = formatRupiah(cell);
+              }
+            }
+
+            // Apply formatting for Transactions Table
+            if (elementId === 'transactions-table') {
+              if (cellIndex === 2) {
+                // Format Rupiah untuk kolom Jumlah (index 2)
                 displayText = formatRupiah(cell);
               }
             }
