@@ -198,7 +198,7 @@ export default function DashboardLayout({
               <Button asChild variant="ghost" className={navLinkClass("/dashboard/reports/student-liabilities")} onClick={handleNavClick}>
                 <Link href="/dashboard/reports/student-liabilities">
                   <CreditCard className="h-4 w-4" />
-                  Hutang Siswa
+                  Tanggungan Siswa
                 </Link>
               </Button>
             </CollapsibleContent>
