@@ -360,13 +360,13 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
       // After removing "Dicatat Oleh", "Bukti", and "Print" columns from PDF export
       const totalWidth = pageWidth - 2 * margin;
       columnWidths = [
-        totalWidth * 0.12, // Tanggal - 12%
-        totalWidth * 0.28, // Deskripsi - 28%
-        totalWidth * 0.12, // Jumlah - 12%
-        totalWidth * 0.10, // Tipe - 10%
+        totalWidth * 0.16, // Tanggal - 16%
+        totalWidth * 0.20, // Deskripsi - 20%
+        totalWidth * 0.16, // Jumlah - 16%
+        totalWidth * 0.12, // Tipe - 12% (increased from 10%)
         totalWidth * 0.12, // Akun - 12%
         totalWidth * 0.12, // Kategori - 12%
-        totalWidth * 0.14  // Siswa - 14%
+        totalWidth * 0.12  // Siswa - 12% (reduced from 14%)
       ];
     } else {
       // Equal widths for other reports
