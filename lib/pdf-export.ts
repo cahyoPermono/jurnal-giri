@@ -315,10 +315,10 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
       rows.push(rowData);
     });
 
-    // For transactions table, exclude the "Recorded By" column (last column)
+    // For transactions table, exclude the "Recorded By", "Proof", and "Print" columns (last three columns)
     if (elementId === 'transactions-table') {
-      headers = headers.slice(0, -1); // Remove last header
-      rows = rows.map(row => row.slice(0, -1)); // Remove last column from each row
+      headers = headers.slice(0, -3); // Remove last three headers
+      rows = rows.map(row => row.slice(0, -3)); // Remove last three columns from each row
     }
 
     // Calculate column widths - custom widths for different reports
@@ -354,6 +354,19 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         totalWidth * 0.155, // Debet - 15.5%
         totalWidth * 0.155, // Credit - 15.5%
         totalWidth * 0.155  // Saldo - 15.5%
+      ];
+    } else if (elementId === 'transactions-table') {
+      // Custom widths for transactions table: Tanggal, Deskripsi, Jumlah, Tipe, Akun, Kategori, Siswa
+      // After removing "Dicatat Oleh", "Bukti", and "Print" columns from PDF export
+      const totalWidth = pageWidth - 2 * margin;
+      columnWidths = [
+        totalWidth * 0.12, // Tanggal - 12%
+        totalWidth * 0.28, // Deskripsi - 28%
+        totalWidth * 0.12, // Jumlah - 12%
+        totalWidth * 0.10, // Tipe - 10%
+        totalWidth * 0.12, // Akun - 12%
+        totalWidth * 0.12, // Kategori - 12%
+        totalWidth * 0.14  // Siswa - 14%
       ];
     } else {
       // Equal widths for other reports
@@ -425,14 +438,14 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
             maxRowHeight = requiredHeight;
           }
         } else if (elementId === 'transactions-table') {
-          // Check columns that might have long text for text wrapping: description (1), account (4), category (5), student (6)
-          [1, 4, 5, 6].forEach(colIndex => {
-            if (row[colIndex]) {
-              const cellText = row[colIndex];
+          // Check all columns that might have long text for text wrapping
+          row.forEach((cell, colIndex) => {
+            if (cell) {
+              const cellText = cell;
               const cellWidth = columnWidths[colIndex] - 4;
               const lines = pdf.splitTextToSize(cellText, cellWidth);
-              const textHeight = lines.length * 5;
-              const requiredHeight = textHeight + 8;
+              const textHeight = lines.length * 5; // approximate line height. 5mm per line.
+              const requiredHeight = textHeight + 8; // text starts at y+3, rect at y-5, so 8mm difference for padding
               if (requiredHeight > maxRowHeight) {
                 maxRowHeight = requiredHeight;
               }
@@ -538,6 +551,11 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
                 // Format Rupiah untuk kolom Jumlah (index 2)
                 displayText = formatRupiah(cell);
               }
+              // Apply additional formatting for better readability
+              if (cellIndex === 0) {
+                // Format date for Tanggal column
+                displayText = formatIndonesianDate(cell);
+              }
             }
 
             // Draw cell content with text wrapping
@@ -548,7 +566,8 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
               // Text wrapping for Uraian column (index 2) in Buku Kas Bulanan
               const lines = pdf.splitTextToSize(displayText, cellWidth);
               pdf.text(lines, x + 2, yPosition + 3);
-            } else if (elementId === 'transactions-table' && [1, 4, 5, 6].includes(cellIndex)) {
+            } else if (elementId === 'transactions-table') {
+              // Apply text wrapping to all cells in transactions table for better presentation
               const lines = pdf.splitTextToSize(displayText, cellWidth);
               pdf.text(lines, x + 2, yPosition + 3);
             } else {
