@@ -332,6 +332,13 @@ export async function GET(request: Request) {
     const accountId = searchParams.get("accountId");
     const categoryId = searchParams.get("categoryId");
     const studentId = searchParams.get("studentId");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json({ message: "Invalid pagination parameters" }, { status: 400 });
+    }
 
     const where: any = {};
 
@@ -354,19 +361,28 @@ export async function GET(request: Request) {
       where.studentId = studentId;
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where,
-      include: {
-        student: {
-          select: {
-            name: true,
-            nis: true,
-            group: true,
+    const skip = (page - 1) * limit;
+
+    const [transactions, totalCount] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: {
+          student: {
+            select: {
+              name: true,
+              nis: true,
+              group: true,
+            },
           },
         },
-      },
-      orderBy: { date: "desc" },
-    });
+        orderBy: { date: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.transaction.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     // Transform the data to include student details in the transaction object
     const transformedTransactions = transactions.map((transaction) => ({
@@ -376,7 +392,17 @@ export async function GET(request: Request) {
       studentGroup: transaction.student?.group || null,
     }));
 
-    return NextResponse.json(transformedTransactions);
+    return NextResponse.json({
+      transactions: transformedTransactions,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

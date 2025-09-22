@@ -54,6 +54,15 @@ interface Student {
   name: string;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export default function ViewTransactionsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -78,6 +87,9 @@ export default function ViewTransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [receiptTransaction, setReceiptTransaction] = useState<Transaction | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -92,7 +104,14 @@ export default function ViewTransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [startDate, endDate, typeFilter, accountFilter, categoryFilter, studentFilter]);
+  }, [startDate, endDate, typeFilter, accountFilter, categoryFilter, studentFilter, currentPage, pageSize]);
+
+  // Validate current page when pagination data changes
+  useEffect(() => {
+    if (pagination && currentPage > pagination.totalPages && pagination.totalPages > 0) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [pagination, currentPage]);
 
   const fetchFilterData = async () => {
     try {
@@ -112,7 +131,7 @@ export default function ViewTransactionsPage() {
 
       setFinancialAccounts(accountsData);
       setCategories(categoriesData);
-      setStudents(studentsData);
+      setStudents(studentsData.students || studentsData);
     } catch (err: any) {
       setError(err.message);
       toast.error("Failed to fetch filter data: " + err.message);
@@ -128,6 +147,8 @@ export default function ViewTransactionsPage() {
     if (accountFilter && accountFilter !== "all") params.append("accountId", accountFilter);
     if (categoryFilter && categoryFilter !== "all") params.append("categoryId", categoryFilter);
     if (studentFilter && studentFilter !== "all") params.append("studentId", studentFilter);
+    params.append("page", currentPage.toString());
+    params.append("limit", pageSize.toString());
 
     try {
       const res = await fetch(`/api/transactions?${params.toString()}`);
@@ -135,7 +156,8 @@ export default function ViewTransactionsPage() {
         throw new Error("Failed to fetch transactions");
       }
       const data = await res.json();
-      setTransactions(data);
+      setTransactions(data.transactions);
+      setPagination(data.pagination);
     } catch (err: any) {
       setError(err.message);
       toast.error("Failed to fetch transactions: " + err.message);
@@ -677,7 +699,12 @@ export default function ViewTransactionsPage() {
                   <TableRow key={transaction.id}>
                     <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                     <TableCell>{transaction.description}</TableCell>
-                    <TableCell>{Number(transaction.amount).toFixed(2)}</TableCell>
+                    <TableCell>{new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: 'IDR',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
+                    }).format(transaction.amount)}</TableCell>
                     <TableCell>{transaction.type}</TableCell>
                     <TableCell>{transaction.accountName || transaction.account?.name || "-"}</TableCell>
                     <TableCell>{transaction.categoryName || transaction.category?.name || "-"}</TableCell>
@@ -713,6 +740,58 @@ export default function ViewTransactionsPage() {
             </TableBody>
           </Table>
         </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-700">
+              Menampilkan {((pagination.currentPage - 1) * pagination.limit) + 1} sampai{" "}
+              {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} dari{" "}
+              {pagination.totalCount} transaksi
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+              >
+                Sebelumnya
+              </Button>
+
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    const distance = Math.abs(page - pagination.currentPage);
+                    return distance === 0 || distance === 1 || page === 1 || page === pagination.totalPages;
+                  })
+                  .map((page, index, array) => (
+                    <div key={page} className="flex items-center">
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                      <Button
+                        variant={page === pagination.currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+              >
+                Selanjutnya
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
 
       {/* Receipt Modal */}

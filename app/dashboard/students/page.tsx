@@ -55,6 +55,15 @@ interface Student {
   createdAt: string;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export default function ManageStudentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -70,6 +79,9 @@ export default function ManageStudentsPage() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
   const [studentGroups, setStudentGroups] = useState<string[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -78,18 +90,26 @@ export default function ManageStudentsPage() {
       router.push("/login"); // Redirect if not authenticated
     }
 
-    fetchStudents();
+    fetchStudents(currentPage, pageSize);
     fetchStudentGroups();
-  }, [session, status, router]);
+  }, [session, status, router, currentPage, pageSize]);
 
-  const fetchStudents = async () => {
+  // Validate current page when pagination data changes
+  useEffect(() => {
+    if (pagination && currentPage > pagination.totalPages && pagination.totalPages > 0) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [pagination, currentPage]);
+
+  const fetchStudents = async (page: number = 1, limit: number = 10) => {
     try {
-      const res = await fetch("/api/students");
+      const res = await fetch(`/api/students?page=${page}&limit=${limit}`);
       if (!res.ok) {
         throw new Error("Failed to fetch students");
       }
       const data = await res.json();
-      setStudents(data);
+      setStudents(data.students);
+      setPagination(data.pagination);
     } catch (err: any) {
       toast.error("Gagal mengambil data siswa: " + err.message);
     }
@@ -147,7 +167,7 @@ export default function ManageStudentsPage() {
       setNewStudentContactNumber("");
       setNewStudentGroup("");
       setNewStudentEnrollmentDate(new Date());
-      fetchStudents(); // Refresh the list
+      fetchStudents(currentPage, pageSize); // Refresh the list
     } catch (err: any) {
       toast.error("Gagal menambahkan siswa: " + err.message);
     }
@@ -188,7 +208,7 @@ export default function ManageStudentsPage() {
 
       toast.success("Siswa berhasil diperbarui!");
       setEditingStudent(null);
-      fetchStudents(); // Refresh the list
+      fetchStudents(currentPage, pageSize); // Refresh the list
     } catch (err: any) {
       toast.error("Gagal memperbarui siswa: " + err.message);
     }
@@ -206,7 +226,15 @@ export default function ManageStudentsPage() {
       }
 
       toast.success("Siswa berhasil dihapus!");
-      fetchStudents(); // Refresh the list
+
+      // Check if we need to adjust the current page after deletion
+      const remainingStudents = students.filter(student => student.id !== id);
+      if (remainingStudents.length === 0 && currentPage > 1) {
+        // If this was the last student on the page and we're not on page 1, go to previous page
+        setCurrentPage(currentPage - 1);
+      } else {
+        fetchStudents(currentPage, pageSize); // Refresh the list
+      }
     } catch (err: any) {
       toast.error("Gagal menghapus siswa: " + err.message);
     }
@@ -382,6 +410,58 @@ export default function ManageStudentsPage() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-gray-700">
+                Menampilkan {((pagination.currentPage - 1) * pagination.limit) + 1} sampai{" "}
+                {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} dari{" "}
+                {pagination.totalCount} siswa
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={!pagination.hasPrevPage}
+                >
+                  Sebelumnya
+                </Button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      const distance = Math.abs(page - pagination.currentPage);
+                      return distance === 0 || distance === 1 || page === 1 || page === pagination.totalPages;
+                    })
+                    .map((page, index, array) => (
+                      <div key={page} className="flex items-center">
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <span className="px-2 text-gray-500">...</span>
+                        )}
+                        <Button
+                          variant={page === pagination.currentPage ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={!pagination.hasNextPage}
+                >
+                  Selanjutnya
+                </Button>
+              </div>
             </div>
           )}
         </div>

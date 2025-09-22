@@ -12,10 +12,39 @@ export async function GET(request: Request) {
   }
 
   try {
-    const students = await prisma.student.findMany({
-      orderBy: { name: "asc" },
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json({ message: "Invalid pagination parameters" }, { status: 400 });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [students, totalCount] = await Promise.all([
+      prisma.student.findMany({
+        orderBy: { name: "asc" },
+        skip,
+        take: limit,
+      }),
+      prisma.student.count(),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json({
+      students,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     });
-    return NextResponse.json(students);
   } catch (error: any) {
     console.error("Error fetching students:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
