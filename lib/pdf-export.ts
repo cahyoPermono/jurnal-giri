@@ -864,6 +864,39 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         yPosition += maxRowHeight;
       });
 
+      // Add totals for transactions table
+      if (elementId === 'transactions-table') {
+        yPosition += 10; // Space before totals
+
+        // Calculate totals - use passed data if available, otherwise use DOM data
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        // Calculate totals from DOM data (more reliable)
+        rows.forEach(row => {
+          const amount = parseRupiah(row[2] || '0'); // Jumlah column (index 2)
+          const type = row[3] || ''; // Tipe column (index 3)
+
+          if (type.toUpperCase() === 'DEBIT') {
+            totalDebit += amount;
+          } else if (type.toUpperCase() === 'CREDIT') {
+            totalCredit += amount;
+          }
+        });
+
+        // Display totals
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+
+        const totalY = yPosition;
+        pdf.text('Total Debit:', margin, totalY);
+        pdf.text(formatRupiah(totalDebit), margin + 50, totalY);
+
+        pdf.text('Total Credit:', margin, totalY + 8);
+        pdf.text(formatRupiah(totalCredit), margin + 50, totalY + 8);
+
+        yPosition += 25; // Space after totals
+      }
     }
 
     // Add saldo akhir for laporan keuangan bulanan

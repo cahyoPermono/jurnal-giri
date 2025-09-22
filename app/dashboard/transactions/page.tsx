@@ -640,7 +640,7 @@ export default function ViewTransactionsPage() {
             <DownloadIcon className="mr-2 h-4 w-4" />
             Export Bukti
           </Button>
-          <Button onClick={() => exportToPdf('transactions-table', 'transactions.pdf')} variant="outline">
+          <Button onClick={() => exportToPdf('transactions-table', 'transactions.pdf', transactions)} variant="outline">
             <DownloadIcon className="mr-2 h-4 w-4" />
             Ekspor ke PDF
           </Button>
