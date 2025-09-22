@@ -17,6 +17,7 @@ import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { exportToPdf } from "@/lib/pdf-export";
 
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 interface Transaction {
   id: string;
@@ -324,7 +325,7 @@ export default function GeneralJournalReportPage() {
                   <TableRow key={transaction.id}>
                     <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                     <TableCell>{transaction.description}</TableCell>
-                    <TableCell>{Number(transaction.amount).toFixed(2)}</TableCell>
+                    <TableCell>{formatCurrency(transaction.amount)}</TableCell>
                     <TableCell>{transaction.type}</TableCell>
                     <TableCell>{transaction.accountName || transaction.account?.name || "-"}</TableCell>
                     <TableCell>{transaction.categoryName || transaction.category?.name || "-"}</TableCell>

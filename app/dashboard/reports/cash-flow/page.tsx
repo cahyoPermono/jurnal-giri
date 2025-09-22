@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { exportToPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 interface CashFlowReport {
   totalCashIn: number;
@@ -148,16 +149,16 @@ export default function CashFlowReportPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-lg font-medium">Total Pemasukan:</p>
-              <p className="text-lg font-bold text-green-600">{reportData.totalCashIn.toFixed(2)}</p>
+              <p className="text-lg font-bold text-green-600">{formatCurrency(reportData.totalCashIn)}</p>
             </div>
             <div className="flex justify-between items-center">
               <p className="text-lg font-medium">Total Pengeluaran:</p>
-              <p className="text-lg font-bold text-red-600">{reportData.totalCashOut.toFixed(2)}</p>
+              <p className="text-lg font-bold text-red-600">{formatCurrency(reportData.totalCashOut)}</p>
             </div>
             <div className="flex justify-between items-center border-t pt-4">
               <p className="text-xl font-semibold">Arus Kas Bersih:</p>
               <p className={`text-xl font-bold ${reportData.netCashFlow >= 0 ? "text-green-700" : "text-red-700"}`}>
-                {reportData.netCashFlow.toFixed(2)}
+                {formatCurrency(reportData.netCashFlow)}
               </p>
             </div>
           </div>

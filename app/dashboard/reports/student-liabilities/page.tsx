@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { exportToPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 interface StudentReportData {
   id: string;
@@ -134,7 +135,7 @@ export default function StudentLiabilitiesReportPage() {
                                     <TableRow key={index}>
                                       <TableCell>{item.type}</TableCell>
                                       <TableCell>{item.month || '-'}</TableCell>
-                                      <TableCell>{item.amount.toFixed(2)}</TableCell>
+                                      <TableCell>{formatCurrency(item.amount)}</TableCell>
                                     </TableRow>
                                   ))
                                 )}
