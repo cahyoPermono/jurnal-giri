@@ -18,13 +18,14 @@ export async function GET(request: Request) {
     const type = searchParams.get("type");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
+    const exportAll = searchParams.get("exportAll") === "true";
 
     if (!month || !year || !type) {
       return new NextResponse("Missing required parameters: month, year, type", { status: 400 });
     }
 
-    // Validate pagination parameters
-    if (page < 1 || limit < 1 || limit > 100) {
+    // Validate pagination parameters only if not exporting all
+    if (!exportAll && (page < 1 || limit < 1 || limit > 100)) {
       return NextResponse.json({ message: "Invalid pagination parameters" }, { status: 400 });
     }
 
@@ -80,8 +81,29 @@ export async function GET(request: Request) {
       };
     });
 
-    // Apply pagination to the report
+    // Apply pagination to the report or return all data for export
     const totalReportRows = report.length;
+
+    if (exportAll) {
+      // Return all data for PDF export
+      return NextResponse.json({
+        month: m,
+        year: y,
+        type,
+        report: report, // Return all report data
+        totalAmount,
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalCount: totalReportRows,
+          limit: totalReportRows,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      });
+    }
+
+    // Apply pagination for normal display
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedReport = report.slice(startIndex, endIndex);

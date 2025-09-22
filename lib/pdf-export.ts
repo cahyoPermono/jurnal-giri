@@ -59,7 +59,7 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
   try {
     // Check if this is the rekap-semester report
     const isRekapSemester = elementId === 'rekap-semester-report';
-    const isRekapPenerimaanBulan = elementId === 'rekap-penerimaan-bulan-report';
+    const isRekapPenerimaanBulan = elementId === 'rekap-penerimaan-bulan-report' || elementId === 'temp-pdf-table';
     const isLaporanKeuanganBulanan = elementId === 'laporan-keuangan-bulanan-report';
     const isBukuKasBulanan = elementId === 'buku-kas-bulanan-report';
     const isProfitLoss = elementId === 'profit-loss-report';

@@ -111,12 +111,79 @@ export default function RekapPenerimaanBulanReportPage() {
     }
   };
 
-  const handleExportPdf = () => {
-    const filename = type === "pengeluaran"
-      ? "rekap-pengeluaran-bulan-report.pdf"
-      : "rekap-penerimaan-bulan-report.pdf";
-    exportToPdf("rekap-penerimaan-bulan-report", filename, { type, totalAmount: reportData?.totalAmount });
-    toast.success("PDF export started!");
+  const handleExportPdf = async () => {
+    if (!month || !year) {
+      toast.error("Bulan dan tahun harus diisi");
+      return;
+    }
+
+    try {
+      // Fetch all data for PDF export
+      const params = new URLSearchParams();
+      params.append("month", month);
+      params.append("year", year);
+      params.append("type", type);
+      params.append("exportAll", "true");
+
+      const res = await fetch(`/api/reports/rekap-penerimaan-bulan?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch data for PDF export");
+      }
+      const fullData = await res.json();
+
+      const filename = type === "pengeluaran"
+        ? "rekap-pengeluaran-bulan-report.pdf"
+        : "rekap-penerimaan-bulan-report.pdf";
+
+      // Create a temporary container with table for PDF export
+      const tempContainer = document.createElement('div');
+      const tempTable = document.createElement('table');
+      const thead = document.createElement('thead');
+      const tbody = document.createElement('tbody');
+
+      // Create header row
+      const headerRow = document.createElement('tr');
+      const headers = ['No.', 'Tanggal', 'Uraian', type === "pengeluaran" ? "Credit" : "Debet", 'Saldo'];
+      headers.forEach(headerText => {
+        const th = document.createElement('th');
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      // Create data rows
+      fullData.report.forEach((row: any) => {
+        const tr = document.createElement('tr');
+        const cells = [row.no, row.tanggal, row.uraian, formatCurrency(row.amount), formatCurrency(row.saldo)];
+        cells.forEach(cellText => {
+          const td = document.createElement('td');
+          td.textContent = cellText;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      tempTable.appendChild(thead);
+      tempTable.appendChild(tbody);
+      tempContainer.appendChild(tempTable);
+
+      // Temporarily add the container to the DOM for PDF export
+      tempContainer.id = 'temp-pdf-table';
+      tempContainer.style.display = 'none';
+      document.body.appendChild(tempContainer);
+
+      // Small delay to ensure DOM is updated
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      exportToPdf("temp-pdf-table", filename, { type, totalAmount: fullData.totalAmount });
+
+      // Remove the temporary container
+      document.body.removeChild(tempContainer);
+
+      toast.success("PDF export started!");
+    } catch (error) {
+      toast.error("Failed to export PDF: " + (error as Error).message);
+    }
   };
 
   if (status === "loading") {
@@ -207,13 +274,6 @@ export default function RekapPenerimaanBulanReportPage() {
                     <TableCell>{formatCurrency(row.saldo)}</TableCell>
                   </TableRow>
                 ))}
-                {reportData.report.length > 0 && (
-                  <TableRow className="font-bold bg-gray-50">
-                    <TableCell colSpan={3} className="text-right">Total</TableCell>
-                    <TableCell>{formatCurrency(reportData.totalAmount)}</TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
 
