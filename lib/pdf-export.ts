@@ -431,12 +431,12 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         // Custom widths for buku kas bulanan: Tanggal, No (narrow), Uraian (wide), Debet, Credit, Saldo
         const totalWidth = pageWidth - 2 * margin;
         columnWidths = [
-          totalWidth * 0.20, // Tanggal - 20% (diperlebar agar tidak menabrak)
+          totalWidth * 0.22, // Tanggal - 22% (diperlebar agar tidak menabrak)
           totalWidth * 0.06, // No - 6% (narrow for numbers up to hundreds)
-          totalWidth * 0.28, // Uraian - 28% (dikecilkan sedikit agar lebih proporsional)
-          totalWidth * 0.155, // Debet - 15.5%
+          totalWidth * 0.218, // Uraian - 21.8% (dikecilkan sedikit agar lebih proporsional)
+          totalWidth * 0.167, // Debet - 16.7%
           totalWidth * 0.155, // Credit - 15.5%
-          totalWidth * 0.155  // Saldo - 15.5%
+          totalWidth * 0.18  // Saldo - 18%
         ];
       } else if (elementId === 'transactions-table') {
         // Custom widths for transactions table: Tanggal, Deskripsi, Jumlah, Tipe, Akun, Kategori, Siswa
