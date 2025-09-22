@@ -91,7 +91,8 @@ export default function DashboardContent() {
       // Fetch students
       const studentsRes = await fetch("/api/students");
       if (!studentsRes.ok) throw new Error("Failed to fetch students");
-      const students = await studentsRes.json();
+      const studentsData = await studentsRes.json();
+      const students = studentsData.students;
 
       // Fetch financial accounts
       const accRes = await fetch("/api/financial-accounts");
@@ -119,7 +120,7 @@ export default function DashboardContent() {
         );
         if (sppTransRes.ok) {
           const sppTransactions = await sppTransRes.json();
-          sppTransactions.filter((t: any) => t.studentId).forEach((t: any) => paidStudentIds.add(t.studentId));
+          sppTransactions.transactions.filter((t: any) => t.studentId).forEach((t: any) => paidStudentIds.add(t.studentId));
         }
       }
 
@@ -130,7 +131,7 @@ export default function DashboardContent() {
         );
         if (bankSppTransRes.ok) {
           const bankTransactions = await bankSppTransRes.json();
-          bankTransactions
+          bankTransactions.transactions
             .filter((t: any) => t.studentId && t.categoryName === "SPP Bank")
             .forEach((t: any) => paidStudentIds.add(t.studentId));
         }
@@ -148,7 +149,8 @@ export default function DashboardContent() {
       // Fetch students
       const studentsRes = await fetch("/api/students");
       if (!studentsRes.ok) throw new Error("Failed to fetch students");
-      const students = await studentsRes.json();
+      const studentsData = await studentsRes.json();
+      const students = studentsData.students;
 
       // Fetch financial accounts
       const accRes = await fetch("/api/financial-accounts");
@@ -172,7 +174,7 @@ export default function DashboardContent() {
         );
         if (regTransRes.ok) {
           const regTransactions = await regTransRes.json();
-          regTransactions.filter((t: any) => t.studentId).forEach((t: any) => paidStudentIds.add(t.studentId));
+          regTransactions.transactions.filter((t: any) => t.studentId).forEach((t: any) => paidStudentIds.add(t.studentId));
         }
       }
 
@@ -183,7 +185,7 @@ export default function DashboardContent() {
         );
         if (bankRegTransRes.ok) {
           const bankTransactions = await bankRegTransRes.json();
-          bankTransactions
+          bankTransactions.transactions
             .filter((t: any) => t.studentId && t.categoryName === "Pendaftaran Bank")
             .forEach((t: any) => paidStudentIds.add(t.studentId));
         }

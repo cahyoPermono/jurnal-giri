@@ -122,7 +122,7 @@ export default function GeneralJournalReportPage() {
 
       setFinancialAccounts(accountsData);
       setCategories(categoriesData);
-      setStudents(studentsData);
+      setStudents(studentsData.students);
     } catch (err: any) {
       setError(err.message);
       toast.error("Failed to fetch filter data: " + err.message);

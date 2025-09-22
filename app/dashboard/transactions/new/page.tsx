@@ -151,7 +151,7 @@ export default function NewTransactionPage() {
 
       setFinancialAccounts(accountsData);
       setCategories(categoriesData);
-      setStudents(studentsData);
+      setStudents(studentsData.students);
 
       // Set default values if data exists
       if (accountsData.length > 0) setAccountId(accountsData[0].id);
