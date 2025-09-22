@@ -9,16 +9,24 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { exportToPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
+
+interface CategoryBreakdown {
+  category: string;
+  amount: number;
+}
 
 interface ProfitLossReport {
   totalDebit: number;
   totalCredit: number;
   netProfitLoss: number;
+  incomeBreakdown: CategoryBreakdown[];
+  expenseBreakdown: CategoryBreakdown[];
 }
 
 export default function ProfitLossReportPage() {
@@ -42,12 +50,14 @@ export default function ProfitLossReportPage() {
   }, [session, status, router]);
 
   useEffect(() => {
-    // Set current date only on client side after component mounts
-    if (!startDate) {
-      setStartDate(new Date());
-    }
-    if (!endDate) {
-      setEndDate(new Date());
+    // Set current month date range only on client side after component mounts
+    if (!startDate || !endDate) {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      setStartDate(startOfMonth);
+      setEndDate(endOfMonth);
     }
   }, [startDate, endDate]);
 
@@ -82,15 +92,15 @@ export default function ProfitLossReportPage() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Simple Profit and Loss Report</CardTitle>
-        <CardDescription>Summary of income (debit) and expenses (credit).</CardDescription>
+        <CardTitle>Laporan Laba Rugi</CardTitle>
+        <CardDescription>Analisis keuangan komprehensif dengan rincian penerimaan dan pengeluaran berdasarkan kategori.</CardDescription>
       </CardHeader>
       <CardContent id="profit-loss-report" className="space-y-6">
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="grid gap-2">
-            <Label htmlFor="startDate">Start Date</Label>
+            <Label htmlFor="startDate">Tanggal Mulai</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -101,7 +111,7 @@ export default function ProfitLossReportPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                  {startDate ? format(startDate, "PPP") : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -116,7 +126,7 @@ export default function ProfitLossReportPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="endDate">End Date</Label>
+            <Label htmlFor="endDate">Tanggal Akhir</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -127,7 +137,7 @@ export default function ProfitLossReportPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                  {endDate ? format(endDate, "PPP") : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -142,29 +152,148 @@ export default function ProfitLossReportPage() {
           </div>
         </div>
 
-        <Button onClick={handleExportPdf} className="mb-4">Export to PDF</Button>
+        <div className="flex gap-4 mb-6">
+          <Button onClick={fetchReportData} variant="default">
+            Buat Laporan
+          </Button>
+          <Button onClick={handleExportPdf} variant="outline">
+            Ekspor ke PDF
+          </Button>
+        </div>
 
         {reportData && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <p className="text-lg font-medium">Total Income (Debit):</p>
-              <p className="text-lg font-bold text-green-600">{reportData.totalDebit.toFixed(2)}</p>
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Penerimaan</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        Rp {reportData.totalDebit.toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-2">
+                    <TrendingDown className="h-8 w-8 text-red-600" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Pengeluaran</p>
+                      <p className="text-2xl font-bold text-red-600">
+                        Rp {reportData.totalCredit.toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className={`h-8 w-8 ${reportData.netProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Laba Rugi Bersih</p>
+                      <p className={`text-2xl font-bold ${reportData.netProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        Rp {reportData.netProfitLoss.toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="flex justify-between items-center">
-              <p className="text-lg font-medium">Total Expenses (Credit):</p>
-              <p className="text-lg font-bold text-red-600">{reportData.totalCredit.toFixed(2)}</p>
-            </div>
-            <div className="flex justify-between items-center border-t pt-4">
-              <p className="text-xl font-semibold">Net Profit/Loss:</p>
-              <p className={`text-xl font-bold ${reportData.netProfitLoss >= 0 ? "text-green-700" : "text-red-700"}`}>
-                {reportData.netProfitLoss.toFixed(2)}
-              </p>
-            </div>
+
+            {/* Income Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-green-700">Rincian Penerimaan berdasarkan Kategori</CardTitle>
+                <CardDescription>Sumber penerimaan terperinci</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Kategori</TableHead>
+                      <TableHead className="text-right">Jumlah</TableHead>
+                      <TableHead className="text-right">Persentase</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportData.incomeBreakdown.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.category}</TableCell>
+                        <TableCell className="text-right text-green-600">
+                          Rp {item.amount.toLocaleString('id-ID')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {reportData.totalDebit > 0
+                            ? ((item.amount / reportData.totalDebit) * 100).toFixed(1)
+                            : 0}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {reportData.incomeBreakdown.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground">
+                          Tidak ada data penerimaan untuk periode yang dipilih
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Expense Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-700">Rincian Pengeluaran berdasarkan Kategori</CardTitle>
+                <CardDescription>Kategori pengeluaran terperinci</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Kategori</TableHead>
+                      <TableHead className="text-right">Jumlah</TableHead>
+                      <TableHead className="text-right">Persentase</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportData.expenseBreakdown.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.category}</TableCell>
+                        <TableCell className="text-right text-red-600">
+                          Rp {item.amount.toLocaleString('id-ID')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {reportData.totalCredit > 0
+                            ? ((item.amount / reportData.totalCredit) * 100).toFixed(1)
+                            : 0}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {reportData.expenseBreakdown.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground">
+                          Tidak ada data pengeluaran untuk periode yang dipilih
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {!reportData && !error && (
-          <p className="text-gray-500 text-center">Select a date range to view the report.</p>
+          <p className="text-gray-500 text-center">Pilih rentang tanggal untuk melihat laporan.</p>
         )}
       </CardContent>
     </Card>

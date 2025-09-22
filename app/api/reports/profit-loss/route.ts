@@ -45,14 +45,68 @@ export async function GET(request: Request) {
       },
     });
 
+    // Get detailed breakdown by categories
+    const debitByCategoryRaw = await prisma.transaction.groupBy({
+      by: ['categoryId'],
+      _sum: {
+        amount: true,
+      },
+      where: {
+        ...where,
+        type: TransactionType.DEBIT,
+      },
+    });
+
+    const creditByCategoryRaw = await prisma.transaction.groupBy({
+      by: ['categoryId'],
+      _sum: {
+        amount: true,
+      },
+      where: {
+        ...where,
+        type: TransactionType.CREDIT,
+      },
+    });
+
+    // Get category names
+    const categoryIds = [...new Set([
+      ...debitByCategoryRaw.map(d => d.categoryId).filter(Boolean),
+      ...creditByCategoryRaw.map(c => c.categoryId).filter(Boolean)
+    ])] as string[];
+
+    const categories = await prisma.category.findMany({
+      where: {
+        id: { in: categoryIds }
+      },
+      select: {
+        id: true,
+        name: true,
+      }
+    });
+
+    const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
     const totalDebit = debitTransactions._sum.amount?.toNumber() || 0;
     const totalCredit = creditTransactions._sum.amount?.toNumber() || 0;
     const netProfitLoss = totalDebit - totalCredit;
+
+    // Format category breakdowns
+    const incomeBreakdown = debitByCategoryRaw.map(item => ({
+      category: item.categoryId ? categoryMap.get(item.categoryId) || 'Uncategorized' : 'Uncategorized',
+      amount: item._sum.amount?.toNumber() || 0,
+    }));
+
+    const expenseBreakdown = creditByCategoryRaw.map(item => ({
+      category: item.categoryId ? categoryMap.get(item.categoryId) || 'Uncategorized' : 'Uncategorized',
+      amount: item._sum.amount?.toNumber() || 0,
+    }));
 
     return NextResponse.json({
       totalDebit,
       totalCredit,
       netProfitLoss,
+      incomeBreakdown,
+      expenseBreakdown,
     });
   } catch (error) {
     console.error("Error fetching profit/loss report:", error);
