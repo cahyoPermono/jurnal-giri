@@ -72,7 +72,7 @@ export default function StudentLiabilitiesReportPage() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Laporan Hutang Siswa</CardTitle>
+        <CardTitle>Laporan Tanggungan Siswa</CardTitle>
         <CardDescription>Ringkasan kewajiban keuangan siswa.</CardDescription>
       </CardHeader>
       <CardContent id="student-liabilities-report" className="space-y-6">
@@ -93,7 +93,7 @@ export default function StudentLiabilitiesReportPage() {
               {reportData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="h-24 text-center">
-                    Tidak ada hutang siswa ditemukan.
+                    Tidak ada tanggungan siswa ditemukan.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -105,12 +105,12 @@ export default function StudentLiabilitiesReportPage() {
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm">
-                            Lihat Hutang
+                            Lihat Tanggungan
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>Hutang untuk {student.name}</DialogTitle>
+                            <DialogTitle>Tanggungan untuk {student.name}</DialogTitle>
                             <DialogDescription>Daftar kewajiban yang belum dibayar.</DialogDescription>
                           </DialogHeader>
                           <div className="rounded-md border mt-4">
@@ -126,7 +126,7 @@ export default function StudentLiabilitiesReportPage() {
                                 {student.unpaidItems.length === 0 ? (
                                   <TableRow>
                                     <TableCell colSpan={3} className="h-12 text-center">
-                                      Tidak ada hutang untuk siswa ini.
+                                      Tidak ada tanggungan untuk siswa ini.
                                     </TableCell>
                                   </TableRow>
                                 ) : (
