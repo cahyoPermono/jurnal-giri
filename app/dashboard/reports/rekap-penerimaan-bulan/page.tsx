@@ -35,6 +35,7 @@ interface RekapPenerimaanBulanReport {
   year: number;
   type: string;
   report: ReportRow[];
+  totalAmount: number;
   pagination?: PaginationInfo;
 }
 
@@ -114,7 +115,7 @@ export default function RekapPenerimaanBulanReportPage() {
     const filename = type === "pengeluaran"
       ? "rekap-pengeluaran-bulan-report.pdf"
       : "rekap-penerimaan-bulan-report.pdf";
-    exportToPdf("rekap-penerimaan-bulan-report", filename, { type });
+    exportToPdf("rekap-penerimaan-bulan-report", filename, { type, totalAmount: reportData?.totalAmount });
     toast.success("PDF export started!");
   };
 
@@ -206,6 +207,13 @@ export default function RekapPenerimaanBulanReportPage() {
                     <TableCell>{formatCurrency(row.saldo)}</TableCell>
                   </TableRow>
                 ))}
+                {reportData.report.length > 0 && (
+                  <TableRow className="font-bold bg-gray-50">
+                    <TableCell colSpan={3} className="text-right">Total</TableCell>
+                    <TableCell>{formatCurrency(reportData.totalAmount)}</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
 

@@ -376,6 +376,13 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         rows.push(rowData);
       });
 
+      // For rekap penerimaan bulan, add the total row if totalAmount is provided
+      if (isRekapPenerimaanBulan && data?.totalAmount !== undefined) {
+        // Add total row at the end: ["Total", "", "", formattedAmount, ""]
+        const formattedTotal = formatRupiah(data.totalAmount);
+        rows.push(["Total", "", "", formattedTotal, ""]);
+      }
+
       // For transactions table, exclude the "Recorded By", "Proof", and "Print" columns (last three columns)
       if (elementId === 'transactions-table') {
         headers = headers.slice(0, -3); // Remove last three headers
@@ -673,6 +680,9 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         const currentY = yPosition;
         let maxRowHeight = rowHeight;
 
+        // Check if this is the total row for rekap penerimaan bulan
+        const isTotalRow = isRekapPenerimaanBulan && row.length > 0 && row[0] === "Total";
+
         // Check if this is an empty row (for Buku Kas Bulanan spacing)
         const isEmptyRow = isBukuKasBulanan && (
           row.every(cell => cell === "" || cell === "0") ||
@@ -681,7 +691,7 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         );
 
         // Pre-calculate max row height for text wrapping
-        if (isRekapPenerimaanBulan && row[2]) {
+        if (isRekapPenerimaanBulan && row[2] && !isTotalRow) {
           const uraianCellText = row[2] || '';
           const uraianCellWidth = columnWidths[2] - 4; // account for padding
           const lines = pdf.splitTextToSize(uraianCellText, uraianCellWidth);
@@ -759,6 +769,25 @@ export async function exportToPdf(elementId: string, filename: string, data?: an
         // Handle empty rows differently - draw all vertical lines even if no content
         if (isEmptyRow) {
           // For empty rows, draw all vertical lines to create proper grid
+          for (let cellIndex = 0; cellIndex < headers.length; cellIndex++) {
+            const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
+            if (cellIndex < headers.length - 1) {
+              pdf.line(nextX, yPosition - 5, nextX, yPosition - 5 + maxRowHeight);
+            }
+          }
+        } else if (isTotalRow) {
+          // Special handling for total row in rekap penerimaan bulan
+          // Draw "Total" spanning first 3 columns, right-aligned
+          const totalTextX = margin + columnWidths.slice(0, 3).reduce((sum, width) => sum + width, 0) - 2; // Right align in the spanned area
+          pdf.setFont('helvetica', 'bold');
+          pdf.text("Total", totalTextX, yPosition + 3, { align: 'right' });
+
+          // Draw the total amount in the 4th column
+          const amountX = margin + columnWidths.slice(0, 3).reduce((sum, width) => sum + width, 0);
+          const amountText = formatRupiah(row[3] || '0');
+          pdf.text(amountText, amountX + 2, yPosition + 3);
+
+          // Draw vertical lines for the total row
           for (let cellIndex = 0; cellIndex < headers.length; cellIndex++) {
             const nextX = margin + columnWidths.slice(0, cellIndex + 1).reduce((sum, width) => sum + width, 0);
             if (cellIndex < headers.length - 1) {

@@ -60,6 +60,9 @@ export async function GET(request: Request) {
       },
     });
 
+    // Calculate total amount
+    const totalAmount = transactions.reduce((sum, tx) => sum + tx.amount.toNumber(), 0);
+
     // Build report with running balance
     let runningBalance = 0;
     const report = transactions.map((tx, index) => {
@@ -89,6 +92,7 @@ export async function GET(request: Request) {
       year: y,
       type,
       report: paginatedReport,
+      totalAmount,
       pagination: {
         currentPage: page,
         totalPages,
