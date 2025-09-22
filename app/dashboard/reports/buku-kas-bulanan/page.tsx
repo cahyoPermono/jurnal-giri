@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { exportToPdf } from "@/lib/pdf-export";
+import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -199,13 +200,13 @@ export default function BukuKasBulananReportPage() {
                         <TableCell></TableCell>
                         <TableCell className="font-bold">{entry.uraian}</TableCell>
                         <TableCell className="text-right font-bold">
-                          {entry.debet.toFixed(2)}
+                          {formatCurrency(entry.debet)}
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          {entry.credit.toFixed(2)}
+                          {formatCurrency(entry.credit)}
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          {entry.saldo.toFixed(2)}
+                          {formatCurrency(entry.saldo)}
                         </TableCell>
                       </TableRow>
                     );
@@ -218,12 +219,12 @@ export default function BukuKasBulananReportPage() {
                       <TableCell>{entry.no}</TableCell>
                       <TableCell>{entry.uraian}</TableCell>
                       <TableCell className="text-right">
-                        {entry.debet > 0 ? entry.debet.toFixed(2) : ""}
+                        {entry.debet > 0 ? formatCurrency(entry.debet) : ""}
                       </TableCell>
                       <TableCell className="text-right">
-                        {entry.credit > 0 ? entry.credit.toFixed(2) : ""}
+                        {entry.credit > 0 ? formatCurrency(entry.credit) : ""}
                       </TableCell>
-                      <TableCell className="text-right">{entry.saldo.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(entry.saldo)}</TableCell>
                     </TableRow>
                   );
                 })}
