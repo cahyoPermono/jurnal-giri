@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { exportToPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BukuKasEntry {
   tanggal: string;
@@ -21,14 +22,26 @@ interface BukuKasEntry {
   saldo: number;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export default function BukuKasBulananReportPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   const [reportData, setReportData] = useState<BukuKasEntry[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [minggu, setMinggu] = useState<string>("");
   const [bulan, setBulan] = useState<string>("");
   const [tahun, setTahun] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(20);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +54,7 @@ export default function BukuKasBulananReportPage() {
     }
   }, [session, status, router]);
 
-  const fetchReportData = async () => {
+  const fetchReportData = async (page: number = 1) => {
     if (!minggu || !bulan || !tahun) {
       toast.error("Semua field harus diisi");
       return;
@@ -54,6 +67,8 @@ export default function BukuKasBulananReportPage() {
     params.append("minggu", minggu);
     params.append("bulan", bulan);
     params.append("tahun", tahun);
+    params.append("page", page.toString());
+    params.append("limit", pageSize.toString());
 
     try {
       const res = await fetch(`/api/reports/buku-kas-bulanan?${params.toString()}`);
@@ -61,7 +76,9 @@ export default function BukuKasBulananReportPage() {
         throw new Error("Failed to fetch buku kas bulanan report");
       }
       const data = await res.json();
-      setReportData(data);
+      setReportData(data.entries);
+      setPagination(data.pagination);
+      setCurrentPage(page);
     } catch (err: any) {
       setError(err.message);
       toast.error("Failed to fetch buku kas bulanan report: " + err.message);
@@ -146,7 +163,7 @@ export default function BukuKasBulananReportPage() {
           </div>
         </div>
 
-        <Button onClick={fetchReportData} disabled={loading} className="mb-4">
+        <Button onClick={() => fetchReportData(1)} disabled={loading} className="mb-4">
           {loading ? "Memuat..." : "Tampilkan Laporan"}
         </Button>
 
@@ -212,6 +229,58 @@ export default function BukuKasBulananReportPage() {
                 })}
               </TableBody>
             </Table>
+
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-gray-700">
+                  Menampilkan {((pagination.currentPage - 1) * pagination.limit) + 1} sampai{" "}
+                  {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} dari{" "}
+                  {pagination.totalCount} entries
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchReportData(currentPage - 1)}
+                    disabled={!pagination.hasPrevPage || loading}
+                  >
+                    Sebelumnya
+                  </Button>
+
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        const distance = Math.abs(page - pagination.currentPage);
+                        return distance === 0 || distance === 1 || page === 1 || page === pagination.totalPages;
+                      })
+                      .map((page, index, array) => (
+                        <div key={page} className="flex items-center">
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className="px-2 text-gray-500">...</span>
+                          )}
+                          <Button
+                            variant={page === pagination.currentPage ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => fetchReportData(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchReportData(currentPage + 1)}
+                    disabled={!pagination.hasNextPage || loading}
+                  >
+                    Selanjutnya
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Button onClick={handleExportPdf} className="mt-4">Ekspor ke PDF</Button>
           </>

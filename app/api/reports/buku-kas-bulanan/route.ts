@@ -24,9 +24,16 @@ export async function GET(request: Request) {
     const minggu = searchParams.get("minggu");
     const bulan = searchParams.get("bulan");
     const tahun = searchParams.get("tahun");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
 
     if (!minggu || !bulan || !tahun) {
       return new NextResponse("Missing required parameters: minggu, bulan, tahun", { status: 400 });
+    }
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json({ message: "Invalid pagination parameters" }, { status: 400 });
     }
 
     const bulanNum = parseInt(bulan);
@@ -146,7 +153,24 @@ export async function GET(request: Request) {
       saldo: currentSaldo,
     });
 
-    return NextResponse.json(entries);
+    // Apply pagination to the entries
+    const totalEntries = entries.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedEntries = entries.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(totalEntries / limit);
+
+    return NextResponse.json({
+      entries: paginatedEntries,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount: totalEntries,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error fetching buku kas bulanan report:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

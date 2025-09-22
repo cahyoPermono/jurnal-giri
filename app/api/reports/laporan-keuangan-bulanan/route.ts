@@ -15,10 +15,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get("month");
     const year = searchParams.get("year");
-    const grouping = searchParams.get("grouping") || "category";
+    const grouping = searchParams.get("grouping");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
 
     if (!month || !year) {
-      return new NextResponse("Month and year are required", { status: 400 });
+      return new NextResponse("Missing required parameters: month, year", { status: 400 });
+    }
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json({ message: "Invalid pagination parameters" }, { status: 400 });
     }
 
     const m = parseInt(month);
@@ -217,12 +224,27 @@ export async function GET(request: Request) {
       year: 'numeric',
     });
 
+    // Apply pagination to the report
+    const totalReportRows = report.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedReport = report.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(totalReportRows / limit);
+
     return NextResponse.json({
       month: m,
       year: y,
-      report,
+      report: paginatedReport,
       saldoAkhir,
       signatureDate,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount: totalReportRows,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     });
   } catch (error) {
     console.error("Error fetching laporan keuangan bulanan report:", error);

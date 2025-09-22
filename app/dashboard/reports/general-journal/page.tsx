@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { exportToPdf } from "@/lib/pdf-export";
 
 import { toast } from "sonner";
@@ -56,18 +56,27 @@ export default function GeneralJournalReportPage() {
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [pagination, setPagination] = useState<any>(null);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [accountFilter, setAccountFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [studentFilter, setStudentFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(20);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [startDate, endDate, typeFilter, accountFilter, categoryFilter, studentFilter]);
 
   const [financialAccounts, setFinancialAccounts] = useState<FinancialAccount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
 
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -92,7 +101,7 @@ export default function GeneralJournalReportPage() {
 
   useEffect(() => {
     fetchTransactions();
-  }, [startDate, endDate, typeFilter, accountFilter, categoryFilter, studentFilter]);
+  }, [startDate, endDate, typeFilter, accountFilter, categoryFilter, studentFilter, currentPage, pageSize]);
 
   const fetchFilterData = async () => {
     try {
@@ -121,6 +130,7 @@ export default function GeneralJournalReportPage() {
 
   const fetchTransactions = async () => {
     setError(null);
+    setLoading(true);
     const params = new URLSearchParams();
     if (startDate) params.append("startDate", startDate.toISOString());
     if (endDate) params.append("endDate", endDate.toISOString());
@@ -128,6 +138,8 @@ export default function GeneralJournalReportPage() {
     if (accountFilter && accountFilter !== "all") params.append("accountId", accountFilter);
     if (categoryFilter && categoryFilter !== "all") params.append("categoryId", categoryFilter);
     if (studentFilter && studentFilter !== "all") params.append("studentId", studentFilter);
+    params.append("page", currentPage.toString());
+    params.append("limit", pageSize.toString());
 
     try {
       const res = await fetch(`/api/transactions?${params.toString()}`);
@@ -135,10 +147,13 @@ export default function GeneralJournalReportPage() {
         throw new Error("Failed to fetch transactions");
       }
       const data = await res.json();
-      setTransactions(data);
+      setTransactions(data.transactions);
+      setPagination(data.pagination);
     } catch (err: any) {
       setError(err.message);
       toast.error("Failed to fetch transactions: " + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -321,6 +336,58 @@ export default function GeneralJournalReportPage() {
             </TableBody>
           </Table>
         </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-700">
+              Menampilkan {((pagination.currentPage - 1) * pagination.limit) + 1} sampai{" "}
+              {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} dari{" "}
+              {pagination.totalCount} transaksi
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={!pagination.hasPrevPage || loading}
+              >
+                Sebelumnya
+              </Button>
+
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    const distance = Math.abs(page - pagination.currentPage);
+                    return distance === 0 || distance === 1 || page === 1 || page === pagination.totalPages;
+                  })
+                  .map((page, index, array) => (
+                    <div key={page} className="flex items-center">
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                      <Button
+                        variant={page === pagination.currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={!pagination.hasNextPage || loading}
+              >
+                Selanjutnya
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

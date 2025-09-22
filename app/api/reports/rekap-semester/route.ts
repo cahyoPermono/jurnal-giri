@@ -15,9 +15,16 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const semester = searchParams.get("semester");
     const academicYear = searchParams.get("academicYear");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
 
     if (!semester || !academicYear) {
-      return new NextResponse("Semester and academic year are required", { status: 400 });
+      return new NextResponse("Missing required parameters: semester, academicYear", { status: 400 });
+    }
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json({ message: "Invalid pagination parameters" }, { status: 400 });
     }
 
     const sem = parseInt(semester);
@@ -104,10 +111,25 @@ export async function GET(request: Request) {
       };
     });
 
+    // Apply pagination to the report
+    const totalReportRows = report.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedReport = report.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(totalReportRows / limit);
+
     return NextResponse.json({
       semester: sem,
       academicYear,
-      report,
+      report: paginatedReport,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount: totalReportRows,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
     });
   } catch (error) {
     console.error("Error fetching rekap semester report:", error);
