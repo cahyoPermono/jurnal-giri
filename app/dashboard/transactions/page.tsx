@@ -429,7 +429,8 @@ export default function ViewTransactionsPage() {
         // Try to add the proof image
         if (transaction.proofFile) {
           try {
-            const response = await fetch(transaction.proofFile);
+            const proofUrl = `/api/uploads/${transaction.proofFile.replace('/uploads/', '')}`;
+            const response = await fetch(proofUrl);
             if (response.ok) {
               const blob = await response.blob();
               if (blob.type.startsWith('image/')) {
