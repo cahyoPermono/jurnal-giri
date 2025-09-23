@@ -54,12 +54,12 @@ export default function ThermalReceipt({ transaction, onClose }: ThermalReceiptP
             padding: 0;
           }
           .thermal-receipt {
-            width: 48mm;
+            width: 52mm;
             font-family: 'Courier New', monospace;
-            font-size: 10px;
-            line-height: 1.2;
+            font-size: 12px;
+            line-height: 1.3;
             margin: 0 auto;
-            padding: 5mm;
+            padding: 3mm;
             background: white;
             color: black;
           }
@@ -159,18 +159,18 @@ export default function ThermalReceipt({ transaction, onClose }: ThermalReceiptP
         <div style={{ marginTop: '15px', fontSize: '9px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ marginBottom: '20px' }}>Pengelola KB</div>
+              <div style={{ marginBottom: '40px' }}>Pengelola KB</div>
               <div style={{ borderTop: '1px solid #000', paddingTop: '2px' }}>Zulfa Mazidah, S.Pd.I</div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ marginBottom: '20px' }}>Bendahara</div>
+              <div style={{ marginBottom: '40px' }}>Bendahara</div>
               <div style={{ borderTop: '1px solid #000', paddingTop: '2px' }}>Wiwin Fauziyah, S.sos</div>
             </div>
           </div>
         </div>
 
         {/* Print timestamp */}
-        <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '7px', borderTop: '1px dashed #000', paddingTop: '3px' }}>
+        <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '9px', borderTop: '1px dashed #000', paddingTop: '3px' }}>
           <div>Diprint: {new Date().toLocaleString('id-ID')}</div>
         </div>
       </div>

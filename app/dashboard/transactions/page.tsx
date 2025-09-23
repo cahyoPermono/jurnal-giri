@@ -196,12 +196,12 @@ export default function ViewTransactionsPage() {
                     padding: 0;
                   }
                   .thermal-receipt {
-                    width: 48mm;
+                    width: 52mm;
                     font-family: 'Courier New', monospace;
-                    font-size: 10px;
-                    line-height: 1.2;
+                    font-size: 12px;
+                    line-height: 1.3;
                     margin: 0 auto;
-                    padding: 5mm;
+                    padding: 3mm;
                     background: white;
                     color: black;
                   }
@@ -310,18 +310,18 @@ export default function ViewTransactionsPage() {
                 <div style="margin-top: 15px; font-size: 9px;">
                   <div style="display: flex; justify-content: space-between;">
                     <div style="text-align: center;">
-                      <div style="margin-bottom: 20px;">Pengelola KB</div>
+                      <div style="margin-bottom: 40px;">Pengelola KB</div>
                       <div style="border-top: 1px solid #000; padding-top: 2px;">Zulfa Mazidah, S.Pd.I</div>
                     </div>
                     <div style="text-align: center;">
-                      <div style="margin-bottom: 20px;">Bendahara</div>
+                      <div style="margin-bottom: 40px;">Bendahara</div>
                       <div style="border-top: 1px solid #000; padding-top: 2px;">Wiwin Fauziyah, S.sos</div>
                     </div>
                   </div>
                 </div>
 
                 <!-- Print timestamp -->
-                <div style="text-align: center; margin-top: 10px; font-size: 8px; border-top: 1px dashed #000; padding-top: 5px;">
+                <div style="text-align: center; margin-top: 8px; font-size: 9px; border-top: 1px dashed #000; padding-top: 3px;">
                   <div>Diprint: ${new Date().toLocaleString('id-ID')}</div>
                 </div>
               </div>
