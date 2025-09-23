@@ -197,9 +197,11 @@ export default function ViewTransactionsPage() {
                   }
                   .thermal-receipt {
                     width: 48mm;
-                    font-family: 'Courier New', monospace;
-                    font-size: 10px;
-                    line-height: 1.2;
+                    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                    font-size: 12px;
+                    font-weight: 900;
+                    line-height: 1.4;
+                    letter-spacing: 0.5px;
                     margin: 0 auto;
                     padding: 5mm;
                     background: white;
@@ -207,6 +209,9 @@ export default function ViewTransactionsPage() {
                   }
                   .thermal-receipt * {
                     box-sizing: border-box;
+                    font-weight: 900 !important;
+                    font-size: 12px !important;
+                    letter-spacing: 0.5px !important;
                   }
                 }
                 @media screen {
@@ -228,11 +233,11 @@ export default function ViewTransactionsPage() {
               <div class="thermal-receipt">
                 <!-- Header -->
                 <div style="text-align: center; margin-bottom: 5px;">
-                  <div style="font-size: 14px; font-weight: bold; margin-bottom: 3px;">KWITANSI PEMBAYARAN</div>
-                  <div style="font-size: 11px; font-weight: bold;">Yayasan Pendidikan dan dakwah muslimat NU SUNAN GIRI</div>
-                  <div style="font-size: 9px;">Taman pengasuhan anak INDIRA GIRI & Kelompok Bermain SUNAN GIRI</div>
-                  <div style="font-size: 8px;">JL HOS COKROAMINOTO 7 Balung Jember 68181</div>
-                  <div style="font-size: 8px;">WA 087743495335</div>
+                  <div style="font-weight: bold; margin-bottom: 3px;">KWITANSI PEMBAYARAN</div>
+                  <div style="font-weight: bold;">Yayasan Pendidikan dan dakwah muslimat NU SUNAN GIRI</div>
+                  <div>Taman pengasuhan anak INDIRA GIRI & Kelompok Bermain SUNAN GIRI</div>
+                  <div>JL HOS COKROAMINOTO 7 Balung Jember 68181</div>
+                  <div>WA 087743495335</div>
                 </div>
 
                 <!-- Separator -->
@@ -240,7 +245,7 @@ export default function ViewTransactionsPage() {
 
                 <!-- Receipt Number and Date -->
                 <div style="margin-bottom: 8px;">
-                  <div style="display: flex; justify-content: space-between; font-size: 9px;">
+                  <div style="display: flex; justify-content: space-between;">
                     <div><strong>No. Kwitansi:</strong> ${receiptTransaction.id.slice(-8).toUpperCase()}</div>
                     <div><strong>Tanggal:</strong> ${new Date(receiptTransaction.date).toLocaleDateString('id-ID', {
                       day: '2-digit',
@@ -258,24 +263,24 @@ export default function ViewTransactionsPage() {
                 <!-- Student Details (if applicable) -->
                 ${receiptTransaction.studentName ? `
                 <div style="margin-bottom: 8px;">
-                  <div style="font-size: 10px; font-weight: bold; margin-bottom: 3px;">TELAH TERIMA DARI:</div>
-                  <div style="font-size: 9px;">Nama Siswa: ${receiptTransaction.studentName}</div>
-                  ${receiptTransaction.studentNis ? `<div style="font-size: 9px;">NIS: ${receiptTransaction.studentNis}</div>` : ''}
-                  ${receiptTransaction.studentGroup ? `<div style="font-size: 9px;">Kelompok: ${receiptTransaction.studentGroup}</div>` : ''}
+                  <div style="font-weight: bold; margin-bottom: 3px;">TELAH TERIMA DARI:</div>
+                  <div>Nama Siswa: ${receiptTransaction.studentName}</div>
+                  ${receiptTransaction.studentNis ? `<div>NIS: ${receiptTransaction.studentNis}</div>` : ''}
+                  ${receiptTransaction.studentGroup ? `<div>Kelompok: ${receiptTransaction.studentGroup}</div>` : ''}
                 </div>
                 ` : ''}
 
                 <!-- Payment Details -->
                 <div style="margin-bottom: 8px;">
-                  <div style="font-size: 10px; font-weight: bold; margin-bottom: 3px;">UNTUK PEMBAYARAN:</div>
-                  <div style="font-size: 9px; word-wrap: break-word;">${receiptTransaction.description}</div>
-                  ${receiptTransaction.categoryName ? `<div style="font-size: 9px;">Kategori: ${receiptTransaction.categoryName}</div>` : ''}
+                  <div style="font-weight: bold; margin-bottom: 3px;">UNTUK PEMBAYARAN:</div>
+                  <div style="word-wrap: break-word;">${receiptTransaction.description}</div>
+                  ${receiptTransaction.categoryName ? `<div>Kategori: ${receiptTransaction.categoryName}</div>` : ''}
                 </div>
 
                 <!-- Amount Section -->
                 <div style="border: 2px solid #000; padding: 8px; margin: 8px 0; text-align: center;">
-                  <div style="font-size: 12px; font-weight: bold; margin-bottom: 3px;">JUMLAH BAYAR</div>
-                  <div style="font-size: 16px; font-weight: bold;">
+                  <div style="font-weight: bold; margin-bottom: 3px;">JUMLAH BAYAR</div>
+                  <div style="font-weight: bold;">
                     ${new Intl.NumberFormat('id-ID', {
                       style: 'currency',
                       currency: 'IDR',
@@ -283,31 +288,31 @@ export default function ViewTransactionsPage() {
                       maximumFractionDigits: 0
                     }).format(receiptTransaction.amount)}
                   </div>
-                  <div style="font-size: 9px; margin-top: 3px;">
+                  <div style="margin-top: 3px;">
                     (${receiptTransaction.type === 'DEBIT' ? 'Pemasukan' : receiptTransaction.type === 'CREDIT' ? 'Pengeluaran' : 'Transfer'})
                   </div>
                 </div>
 
                 <!-- Account Info -->
                 ${receiptTransaction.accountName ? `
-                <div style="margin-bottom: 8px; font-size: 9px;">
+                <div style="margin-bottom: 8px;">
                   <div><strong>Akun:</strong> ${receiptTransaction.accountName}</div>
                 </div>
                 ` : ''}
 
                 <!-- Recorded By -->
-                <div style="margin-bottom: 8px; font-size: 9px;">
+                <div style="margin-bottom: 8px;">
                   <div><strong>Dicatat oleh:</strong> ${receiptTransaction.userName}</div>
                 </div>
 
                 <!-- Footer -->
-                <div style="text-align: center; margin-top: 10px; font-size: 9px;">
+                <div style="text-align: center; margin-top: 10px;">
                   <div style="font-weight: bold;">Terima Kasih atas Pembayaran Anda</div>
                   <div style="margin-top: 3px;">KB SUNAN GIRI</div>
                 </div>
 
                 <!-- Signatures -->
-                <div style="margin-top: 15px; font-size: 9px;">
+                <div style="margin-top: 15px;">
                   <div style="display: flex; justify-content: space-between;">
                     <div style="text-align: center;">
                       <div style="margin-bottom: 20px;">Pengelola KB</div>
@@ -321,7 +326,7 @@ export default function ViewTransactionsPage() {
                 </div>
 
                 <!-- Print timestamp -->
-                <div style="text-align: center; margin-top: 10px; font-size: 8px; border-top: 1px dashed #000; padding-top: 5px;">
+                <div style="text-align: center; margin-top: 10px;">
                   <div>Diprint: ${new Date().toLocaleString('id-ID')}</div>
                 </div>
               </div>
