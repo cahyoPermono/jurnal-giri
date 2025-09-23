@@ -198,10 +198,10 @@ export default function ViewTransactionsPage() {
                   .thermal-receipt {
                     width: 48mm;
                     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                    font-size: 12px;
-                    font-weight: 900;
+                    font-size: 13px;
+                    font-weight: bold;
                     line-height: 1.4;
-                    letter-spacing: 0.5px;
+                    letter-spacing: 0.3px;
                     margin: 0 auto;
                     padding: 5mm;
                     background: white;
@@ -209,22 +209,29 @@ export default function ViewTransactionsPage() {
                   }
                   .thermal-receipt * {
                     box-sizing: border-box;
-                    font-weight: 900 !important;
-                    font-size: 12px !important;
-                    letter-spacing: 0.5px !important;
+                    font-weight: bold !important;
+                    font-size: 13px !important;
+                    letter-spacing: 0.3px !important;
                   }
                 }
                 @media screen {
                   .thermal-receipt {
                     width: 58mm;
-                    font-family: 'Courier New', monospace;
-                    font-size: 12px;
+                    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                    font-size: 13px;
+                    font-weight: bold;
                     line-height: 1.4;
+                    letter-spacing: 0.3px;
                     margin: 20px auto;
                     padding: 10px;
                     border: 1px solid #ccc;
                     background: white;
                     box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                  }
+                  .thermal-receipt * {
+                    font-weight: bold !important;
+                    font-size: 13px !important;
+                    letter-spacing: 0.3px !important;
                   }
                 }
               </style>
