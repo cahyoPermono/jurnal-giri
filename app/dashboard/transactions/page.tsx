@@ -197,9 +197,10 @@ export default function ViewTransactionsPage() {
                   }
                   .thermal-receipt {
                     width: 52mm;
-                    font-family: 'Courier New', monospace;
+                    font-family: Arial, Helvetica, sans-serif;
                     font-size: 12px;
-                    line-height: 1.3;
+                    font-weight: bold;
+                    line-height: 1.2;
                     margin: 0 auto;
                     padding: 3mm;
                     background: white;
